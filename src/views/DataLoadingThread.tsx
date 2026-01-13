@@ -33,6 +33,9 @@ import { getUrls } from '../app/utils';
 import { CustomReactTable } from './ReactTable';
 import { createTableFromText } from '../data/utils';
 
+// Voice input component
+import { VoiceInput } from '@/components/VoiceComponents';
+
 type DialogContentItem = {
     type: 'text';
     text: string;
@@ -651,10 +654,18 @@ Revenue in More Personal Computing was $13.5 billion and increased 9%, with the 
                                 </IconButton>
                             </Tooltip>
                         ) : (
-                            <IconButton color='primary' size="small" disabled={!canSend} 
-                                onClick={() => sendRequest(prompt, userImages)}>
-                                <PrecisionManufacturingIcon />
-                            </IconButton>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <VoiceInput 
+                                    onTranscription={(text) => {
+                                        setPrompt(prev => prev ? `${prev} ${text}` : text);
+                                    }}
+                                    disabled={cleanInProgress}
+                                />
+                                <IconButton color='primary' size="small" disabled={!canSend} 
+                                    onClick={() => sendRequest(prompt, userImages)}>
+                                    <PrecisionManufacturingIcon />
+                                </IconButton>
+                            </Box>
                         )
                     }
                 }}

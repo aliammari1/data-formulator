@@ -62,7 +62,7 @@ class Client(object):
             self.params["custom_llm_provider"] = "azure"
         elif self.endpoint == "ollama":
             self.params["api_base"] = api_base if api_base else "http://localhost:11434"
-            self.params["max_tokens"] = self.params["max_completion_tokens"]
+            self.params["max_tokens"] = self.params.get("max_completion_tokens", 16384)
             if model.startswith("ollama/"):
                 self.model = model
             else:

@@ -2,15 +2,10 @@
 // Licensed under the MIT License.
 
 import React from 'react';
-import {
-    Typography,
-    Box,
-    Card,
-    CardContent,
-    Chip,
-    alpha,
-    useTheme,
-} from '@mui/material';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { Play, ArrowRight } from 'lucide-react';
 
 // Example session data for pre-built sessions
 export interface ExampleSession {
@@ -52,7 +47,7 @@ export const exampleSessions: ExampleSession[] = [
     }
 ];
 
-// Session card component for displaying example sessions
+// Premium Session card component
 export const ExampleSessionCard: React.FC<{
     session: ExampleSession;
     theme: any;
@@ -60,60 +55,43 @@ export const ExampleSessionCard: React.FC<{
     disabled?: boolean;
 }> = ({ session, theme, onClick, disabled }) => {
     return (
-        <Card
-            variant="outlined"
-            sx={{
-                cursor: disabled ? 'default' : 'pointer',
-                '&:hover': disabled ? {} : {
-                    transform: 'translateY(-2px)',
-                    borderColor: alpha(theme.palette.primary.main, 0.4),
-                },
-            }}
+        <Card 
+            className={cn(
+                "group cursor-pointer overflow-hidden bg-card border border-border",
+                "transition-all duration-200",
+                "hover:border-foreground/20 hover:bg-muted/50",
+                disabled && "opacity-50 cursor-not-allowed"
+            )}
             onClick={disabled ? undefined : onClick}
         >
-            <Box
-                sx={{
-                    height: 100,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                    overflow: 'hidden'
-                }}
-            >
-                <Box
-                    component="img"
+            {/* Clean Image Container */}
+            <div className="relative h-28 overflow-hidden bg-muted">
+                {/* Subtle Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background/60 to-transparent z-10" />
+                
+                {/* Image */}
+                <img
                     src={session.previewImage}
                     alt={session.title}
-                    sx={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        opacity: 0.8
-                    }}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-            </Box>
+                
+                {/* Play Button Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="w-10 h-10 rounded-full bg-foreground flex items-center justify-center">
+                        <Play className="h-4 w-4 text-background ml-0.5" />
+                    </div>
+                </div>
+            </div>
 
             {/* Content */}
-            <CardContent sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', py: 1,
-                '&:last-child': { pb: 1 }
-             }}>
-                {/* Header */}
-                <Box>
-                    <Typography
-                        variant="subtitle2"
-                        sx={{
-                            fontSize: '12px',
-                            color: theme.palette.text.secondary,
-                            display: '-webkit-box',
-                            WebkitLineClamp: 2,
-                            WebkitBoxOrient: 'vertical',
-                            overflow: 'hidden'
-                        }}
-                    >
-                        <span style={{textDecoration: 'underline'}}>{session.title}:</span> {session.description}
-                    </Typography>
-                </Box>
+            <CardContent className="p-4">
+                <h3 className="font-semibold text-sm text-foreground mb-1.5">
+                    {session.title}
+                </h3>
+                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-2">
+                    {session.description}
+                </p>
             </CardContent>
         </Card>
     );

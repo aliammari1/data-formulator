@@ -4,10 +4,21 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Box, Button, Divider, IconButton, Typography, Dialog, DialogTitle, DialogContent, Tooltip, CircularProgress } from '@mui/material';
+import { Box, Divider, Tooltip, CircularProgress, Typography } from '@mui/material';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import CloseIcon from '@mui/icons-material/Close';
 
+// shadcn/ui components
+import { Button } from '@/components/ui/button';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogHeader, 
+    DialogTitle,
+    DialogDescription
+} from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { RotateCcw, X, FileUp, ImagePlus, Loader2 } from 'lucide-react';
 
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '../app/store';
@@ -96,48 +107,12 @@ export const DataLoadingChat: React.FC = () => {
     }
 
     const thinkingBanner = (
-        <Box sx={{ 
-            py: 0.5, 
-            display: 'flex', 
-            position: 'relative',
-            overflow: 'hidden',
-            '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                background: 'linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.8) 50%, transparent 100%)',
-                animation: 'shimmer 2s ease-in-out infinite',
-                zIndex: 1,
-                pointerEvents: 'none',
-            },
-            '@keyframes shimmer': {
-                '0%': {
-                    transform: 'translateX(-100%)',
-                },
-                '100%': {
-                    transform: 'translateX(100%)',
-                },
-            }
-        }}>
-            <Box sx={{ 
-                py: 1, 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'left',
-            }}>
-                <CircularProgress size={10} sx={{ color: 'text.secondary' }} />
-                <Typography variant="body2" sx={{ 
-                    ml: 1, 
-                    fontSize: 10, 
-                    color: 'rgba(0, 0, 0, 0.7) !important'
-                }}>
-                    extracting data...
-                </Typography>
-            </Box>
-        </Box>
+        <div className="py-3 flex items-center gap-2">
+            <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+            <span className="text-xs text-muted-foreground">
+                Extracting data...
+            </span>
+        </div>
     );
 
     
@@ -235,24 +210,23 @@ export const DataLoadingChat: React.FC = () => {
                         <Box sx={{ mt: 'auto', pt: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, 
                             '& .MuiButton-root': { textTransform: 'none' } }}>
                             <Button
-                                variant="contained"
-                                sx={{  }}
+                                variant="default"
                                 onClick={() => {
                                     if (inputBoxRef.current) {
                                         inputBoxRef.current();
                                     }
                                 }}
                                 disabled={!selectedTable || selectedTable.content.type !== 'image_url' || cleanInProgress}
-                                size="small"
+                                size="sm"
                             >
                                 Extract data from image
                             </Button>
                             <Button
-                                variant="contained"
-                                sx={{ ml: 'auto' }}
+                                variant="default"
+                                className="ml-auto"
                                 onClick={handleUpload}
                                 disabled={!selectedTable || selectedTable.content.type !== 'csv'}
-                                size="small"
+                                size="sm"
                             >
                                 Load table
                             </Button>
@@ -296,50 +270,49 @@ export const DataLoadingChatDialog: React.FC<DataLoadingChatDialogProps> = ({
     return (
         <>
             {buttonElement && (
-                <Button 
-                    sx={{fontSize: "inherit"}} 
-                    variant="text" 
-                    color="primary" 
-                    disabled={disabled}
+                <div 
+                    className="cursor-pointer"
                     onClick={() => {
-                        setDialogOpen(true);
-                        onOpen?.();
+                        if (!disabled) {
+                            setDialogOpen(true);
+                            onOpen?.();
+                        }
                     }}
                 >
                     {buttonElement}
-                </Button>
+                </div>
             )}
             <Dialog 
-                key="data-loading-chat-dialog" 
-                onClose={() => setDialogOpen(false)} 
                 open={dialogOpen}
-                sx={{ '& .MuiDialog-paper': { maxWidth: '100%', maxHeight: 840, minWidth: 800 } }}
+                onOpenChange={(open) => setDialogOpen(open)}
             >
-                <DialogTitle sx={{display: "flex"}}>
-                    Extract Data
-                    {dataCleanBlocks.length > 0 && <Tooltip title="Reset dialog">  
-                        <IconButton size="small" color='warning' 
-                            sx={{
-                            '&:hover': {  transform: 'rotate(180deg)', 
-                                        transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)' } }} onClick={() => {
-                                            dispatch(dfActions.resetDataCleanBlocks());
-                                        }}>
-                            <RestartAltIcon fontSize="small" />
-                        </IconButton>
-                    </Tooltip>}
-                    <IconButton
-                        sx={{marginLeft: "auto"}}
-                        edge="start"
-                        size="small"
-                        color="inherit"
-                        onClick={() => setDialogOpen(false)}
-                        aria-label="close"
-                    >
-                        <CloseIcon fontSize="inherit"/>
-                    </IconButton>
-                </DialogTitle>
-                <DialogContent sx={{overflowX: "hidden", padding: 1}}>
-                    <DataLoadingChat />
+                <DialogContent className="max-w-250 max-h-[85vh] p-0 gap-0 overflow-hidden">
+                    <DialogHeader className="px-6 py-4 border-b border-border flex flex-row items-center justify-between">
+                        <div>
+                            <DialogTitle className="text-base font-semibold flex items-center gap-2">
+                                <ImagePlus className="h-4 w-4" />
+                                Extract Data
+                            </DialogTitle>
+                            <DialogDescription className="text-xs text-muted-foreground">
+                                Extract structured data from images and documents
+                            </DialogDescription>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {dataCleanBlocks.length > 0 && (
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon-sm"
+                                    className="text-muted-foreground hover:text-foreground"
+                                    onClick={() => dispatch(dfActions.resetDataCleanBlocks())}
+                                >
+                                    <RotateCcw className="h-4 w-4" />
+                                </Button>
+                            )}
+                        </div>
+                    </DialogHeader>
+                    <div className="p-4 overflow-auto max-h-[calc(85vh-80px)]">
+                        <DataLoadingChat />
+                    </div>
                 </DialogContent>
             </Dialog>
         </>

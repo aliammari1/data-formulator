@@ -1,10 +1,7 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT License.
-
 import React, { useEffect, useState } from 'react';
 import '../scss/App.scss';
 
-import { useDispatch, useSelector } from "react-redux"; /* code change */
+import { useDispatch, useSelector } from "react-redux";
 import { 
     DataFormulatorState,
     dfActions,
@@ -18,11 +15,10 @@ import { Allotment } from "allotment";
 import "allotment/dist/style.css";
 
 import {
-
     Typography,
     Box,
     Tooltip,
-    Button,
+    Button as MuiButton,
     Divider,
     useTheme,
     alpha,
@@ -54,6 +50,16 @@ import { getUrls } from '../app/utils';
 import { DataLoadingChatDialog } from './DataLoadingChat';
 import { ReportView } from './ReportView';
 import { ExampleSession, exampleSessions, ExampleSessionCard } from './ExampleSessions';
+
+// Shadcn UI Components
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+// Lucide Icons
+import { Database, FileImage, Clipboard, Upload, Sparkles, ArrowRight, ExternalLink, Play, Zap, BarChart3, LineChart, PieChart, TrendingUp, Layers, Wand2, Bot, ChevronRight } from 'lucide-react';
 
 export const DataFormulatorFC = ({ }) => {
 
@@ -196,30 +202,56 @@ export const DataFormulatorFC = ({ }) => {
         </Box>);
 
     let borderBoxStyle = {
-        border: '1px solid rgba(0,0,0,0.1)', 
-        borderRadius: '16px', 
-        //boxShadow: '0 0 5px rgba(0,0,0,0.1)',
+        border: '1px solid rgba(99, 102, 241, 0.1)', 
+        borderRadius: '20px', 
+        background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(249, 250, 251, 0.95) 100%)',
+        boxShadow: '0 4px 24px rgba(99, 102, 241, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04)',
     }
 
     const fixedSplitPane = ( 
-        <Box sx={{display: 'flex', flexDirection: 'row', height: '100%'}}>
+        <Box sx={{display: 'flex', flexDirection: 'row', height: '100%', background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)'}}>
             <Box sx={{
                 ...borderBoxStyle,
-                    margin: '4px 4px 4px 8px', backgroundColor: 'white',
-                    display: 'flex', height: '100%', width: 'fit-content', flexDirection: 'column'}}>
+                    margin: '8px 6px 8px 12px',
+                    display: 'flex', height: 'calc(100% - 16px)', width: 'fit-content', flexDirection: 'column',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '4px',
+                        background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7)',
+                        borderRadius: '20px 20px 0 0',
+                    }
+                }}>
                 {tables.length > 0 ?  <DataThread sx={{
-                    minWidth: 201,
+                    minWidth: 220,
                     display: 'flex', 
                     flexDirection: 'column',
                     overflow: 'hidden',
                     alignContent: 'flex-start',
                     height: '100%',
+                    padding: '8px 0 0 0',
                 }}/>  : ""} 
             </Box>
             <Box sx={{
                 ...borderBoxStyle,
-                margin: '4px 8px 4px 4px', backgroundColor: 'white',
-                display: 'flex', height: '100%', flex: 1, overflow: 'hidden', flexDirection: 'row'
+                margin: '8px 12px 8px 6px',
+                display: 'flex', height: 'calc(100% - 16px)', flex: 1, overflow: 'hidden', flexDirection: 'row',
+                position: 'relative',
+                '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: '4px',
+                    background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7)',
+                    borderRadius: '20px 20px 0 0',
+                }
             }}>
                 {viewMode === 'editor' ? (
                     <>
@@ -234,114 +266,188 @@ export const DataFormulatorFC = ({ }) => {
         </Box>
     );
 
-    let footer = <Box sx={{ color: 'text.secondary', display: 'flex', 
-            backgroundColor: 'rgba(255, 255, 255, 0.89)',
-            alignItems: 'center', justifyContent: 'center' }}>
-        <Button size="small" color="inherit" 
-            sx={{ textTransform: 'none'}} 
-            target="_blank" rel="noopener noreferrer" 
-            href="https://www.microsoft.com/en-us/privacy/privacystatement">Privacy & Cookies</Button>
-        <Divider orientation="vertical" variant="middle" flexItem sx={{ mx: 1 }} />
-        <Button size="small" color="inherit" 
-            sx={{ textTransform: 'none'}} 
-            target="_blank" rel="noopener noreferrer" 
-            href="https://www.microsoft.com/en-us/legal/intellectualproperty/copyright">Terms of Use</Button>
-        <Divider orientation="vertical" variant="middle" flexItem sx={{ mx: 1 }} />
-        <Button size="small" color="inherit" 
-            sx={{ textTransform: 'none'}} 
-            target="_blank" rel="noopener noreferrer" 
-            href="https://github.com/microsoft/data-formulator/issues">Contact Us</Button>
-        <Typography sx={{ display: 'inline', fontSize: '12px', ml: 1 }}> @ {new Date().getFullYear()}</Typography>
-    </Box>
+    let footer = (
+        <footer className="py-6 px-8 bg-muted/30 border-t border-border">
+            <div className="flex items-center justify-center gap-6 text-sm">
+                <a 
+                    href="https://www.microsoft.com/en-us/privacy/privacystatement" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                >
+                    Privacy & Cookies
+                </a>
+                <div className="w-1 h-1 rounded-full bg-border" />
+                <a 
+                    href="https://www.microsoft.com/en-us/legal/intellectualproperty/copyright" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                >
+                    Terms of Use
+                </a>
+                <div className="w-1 h-1 rounded-full bg-border" />
+                <a 
+                    href="https://github.com/microsoft/data-formulator/issues" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-foreground transition-colors duration-200"
+                >
+                    Contact Us
+                </a>
+                <div className="w-1 h-1 rounded-full bg-border" />
+                <span className="text-muted-foreground/60 text-xs">
+                    © {new Date().getFullYear()} Microsoft
+                </span>
+            </div>
+        </footer>
+    );
 
-    let dataUploadRequestBox = <Box sx={{
-            margin: '4px 4px 4px 8px', 
-            background: `
-                linear-gradient(90deg, ${alpha(theme.palette.text.secondary, 0.01)} 1px, transparent 1px),
-                linear-gradient(0deg, ${alpha(theme.palette.text.secondary, 0.01)} 1px, transparent 1px)
-            `,
-            backgroundSize: '16px 16px',
-            width: 'calc(100vw - 16px)', overflow: 'auto', display: 'flex', flexDirection: 'column', height: '100%',
-        }}>
-        <Box sx={{margin:'auto', pb: '5%', display: "flex", flexDirection: "column", textAlign: "center" }}>
-            <Box sx={{display: 'flex', mx: 'auto'}}>
-                <Typography fontSize={84} sx={{ml: 2, letterSpacing: '0.05em'}}>{toolName}</Typography> 
-            </Box>
-            <Typography sx={{ 
-                fontSize: 24, color: theme.palette.text.secondary, 
-                textAlign: 'center', mb: 4}}>
-                Explore data with visualizations, powered by AI agents. 
-            </Typography>
-            <Box sx={{my: 4}}>
-                <Typography sx={{ 
-                    maxWidth: 1100, fontSize: 28, color: alpha(theme.palette.text.primary, 0.8), 
-                    '& span': { textDecoration: 'underline', textUnderlineOffset: '0.2em', cursor: 'pointer' }}}>
-                    To begin, 
-                    <DataLoadingChatDialog buttonElement={<span>extract</span>}/>{' '}
-                    data from images or text documents, load {' '}
-                    <DatasetSelectionDialog buttonElement={<span>examples</span>}/>, 
-                    upload data from{' '}
-                    <TableCopyDialogV2 buttonElement={<span>clipboard</span>} disabled={false}/> or {' '}
-                    <TableUploadDialog buttonElement={<span>files</span>} disabled={false}/>, 
+    let dataUploadRequestBox = (
+        <div className="flex flex-col h-full w-full overflow-auto bg-background">
+            {/* Subtle Background Pattern */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="decorative-grid opacity-30" />
+            </div>
+            
+            <div className="relative flex-1 flex flex-col items-center justify-center px-6 py-12">
+                {/* Clean Hero Section - Linear Style */}
+                <div className="text-center mb-14 max-w-4xl animate-fade-in">
+                    {/* Simple Badge */}
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-border mb-10">
+                        <Sparkles className="h-4 w-4 text-foreground/60" />
+                        <span className="text-sm font-medium text-foreground/80">AI-Powered Data Visualization</span>
+                    </div>
                     
-                    or connect to a{' '}
-                    <DBTableSelectionDialog buttonElement={<span>database</span>}/>.
-                </Typography>
-            </Box>
-            <Box sx={{mt: 4}}>
-                <Divider sx={{width: '200px', mx: 'auto', mb: 3, fontSize: '1.2rem'}}>
-                    <Typography sx={{ color: 'text.secondary' }}>
-                        demos
-                    </Typography>
-                </Divider>
-                <Box sx={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                    gap: 2,
-                }}>
-                    {exampleSessions.map((session) => (
-                        <ExampleSessionCard
-                            key={session.id}
-                            session={session}
-                            theme={theme}
-                            onClick={() => handleLoadExampleSession(session)}
-                        />
-                    ))}
-                </Box>
-            </Box>
-        </Box>
-        {footer}
-    </Box>;
+                    {/* Clean Title */}
+                    <h1 className="text-6xl md:text-8xl font-bold tracking-tight mb-6 text-foreground">
+                        {toolName}
+                    </h1>
+                    
+                    {/* Subtitle */}
+                    <p className="text-xl md:text-2xl text-muted-foreground mb-3 font-normal">
+                        Transform your data into stunning visualizations
+                    </p>
+                    <p className="text-base text-muted-foreground/70 mb-10 max-w-xl mx-auto">
+                        Powered by AI. No coding required. Just describe what you want to see.
+                    </p>
+                </div>
+
+                {/* Clean Cards - Linear Style */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-16 max-w-5xl w-full animate-slide-up">
+                    <DataLoadingChatDialog buttonElement={
+                        <Card className="group cursor-pointer bg-card hover:bg-muted/50 border border-border hover:border-foreground/20 transition-all duration-200 h-full">
+                            <CardHeader className="pb-3">
+                                <div className="w-10 h-10 rounded-lg bg-foreground flex items-center justify-center mb-4">
+                                    <FileImage className="h-5 w-5 text-background" />
+                                </div>
+                                <CardTitle className="text-base font-semibold">Extract Data</CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                                <CardDescription className="text-sm leading-relaxed">
+                                    Use AI to extract structured data from images and documents
+                                </CardDescription>
+                            </CardContent>
+                        </Card>
+                    }/>
+                    
+                    <DBTableSelectionDialog buttonElement={
+                        <Card className="group cursor-pointer bg-card hover:bg-muted/50 border border-border hover:border-foreground/20 transition-all duration-200 h-full">
+                            <CardHeader className="pb-3">
+                                <div className="w-10 h-10 rounded-lg bg-foreground flex items-center justify-center mb-4">
+                                    <Database className="h-5 w-5 text-background" />
+                                </div>
+                                <CardTitle className="text-base font-semibold">Connect Database</CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                                <CardDescription className="text-sm leading-relaxed">
+                                    PostgreSQL, MySQL, SQLite and more databases
+                                </CardDescription>
+                            </CardContent>
+                        </Card>
+                    }/>
+                    
+                    <TableCopyDialogV2 buttonElement={
+                        <Card className="group cursor-pointer bg-card hover:bg-muted/50 border border-border hover:border-foreground/20 transition-all duration-200 h-full">
+                            <CardHeader className="pb-3">
+                                <div className="w-10 h-10 rounded-lg bg-foreground flex items-center justify-center mb-4">
+                                    <Clipboard className="h-5 w-5 text-background" />
+                                </div>
+                                <CardTitle className="text-base font-semibold">Paste Data</CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                                <CardDescription className="text-sm leading-relaxed">
+                                    Paste from clipboard in CSV or TSV format
+                                </CardDescription>
+                            </CardContent>
+                        </Card>
+                    } disabled={false}/>
+                    
+                    <TableUploadDialog buttonElement={
+                        <Card className="group cursor-pointer bg-card hover:bg-muted/50 border border-border hover:border-foreground/20 transition-all duration-200 h-full">
+                            <CardHeader className="pb-3">
+                                <div className="w-10 h-10 rounded-lg bg-foreground flex items-center justify-center mb-4">
+                                    <Upload className="h-5 w-5 text-background" />
+                                </div>
+                                <CardTitle className="text-base font-semibold">Upload File</CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-0">
+                                <CardDescription className="text-sm leading-relaxed">
+                                    CSV, TSV, JSON and Excel files
+                                </CardDescription>
+                            </CardContent>
+                        </Card>
+                    } disabled={false}/>
+                </div>
+                
+                {/* Demo Sessions Section */}
+                <div className="w-full max-w-5xl animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="flex-1 h-px bg-border" />
+                        <div className="flex items-center gap-2 px-4 py-2 text-muted-foreground">
+                            <Play className="h-4 w-4" />
+                            <span className="text-sm font-medium">Demo Sessions</span>
+                        </div>
+                        <div className="flex-1 h-px bg-border" />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        {exampleSessions.map((session) => (
+                            <ExampleSessionCard
+                                key={session.id}
+                                session={session}
+                                theme={theme}
+                                onClick={() => handleLoadExampleSession(session)}
+                            />
+                        ))}
+                    </div>
+                </div>
+            </div>
+            {footer}
+        </div>
+    );
     
     return (
         <Box sx={{ display: 'block', width: "100%", height: 'calc(100% - 54px)', position: 'relative' }}>
             <DndProvider backend={HTML5Backend}>
                 {tables.length > 0 ? fixedSplitPane : dataUploadRequestBox}
                 {selectedModelId == undefined && (
-                    <Box sx={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        backgroundColor: alpha(theme.palette.background.default, 0.85),
-                        backdropFilter: 'blur(4px)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        zIndex: 1000,
-                    }}>
-                        <Box sx={{margin:'auto', pb: '5%', display: "flex", flexDirection: "column", textAlign: "center"}}>
-                            <Box component="img" sx={{  width: 196, margin: "auto" }} alt="" src={dfLogo} fetchPriority="high" />
-                            <Typography variant="h3" sx={{marginTop: "20px", fontWeight: 200, letterSpacing: '0.05em'}}>
+                    <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex flex-col z-[1000]">
+                        <div className="flex-1 flex flex-col items-center justify-center text-center pb-20">
+                            <img src={dfLogo} alt="Data Formulator" className="w-48 h-48 mb-6" />
+                            <h1 className="text-4xl font-light tracking-wider text-foreground mb-2">
                                 {toolName}
-                            </Typography>
-                            <Typography  variant="h4" sx={{mt: 3, fontSize: 28, letterSpacing: '0.02em'}}>
-                                First, let's <ModelSelectionButton />
-                            </Typography>
-                            <Typography  color="text.secondary" variant="body1" sx={{mt: 2, width: 600}}>💡 Models with strong code generation capabilities (e.g., gpt-5, claude-sonnet-4-5) provide best experience with Data Formulator.</Typography>
-                        </Box>
+                            </h1>
+                            <div className="mt-8 flex flex-col items-center gap-4">
+                                <p className="text-2xl text-foreground">
+                                    First, let's <ModelSelectionButton />
+                                </p>
+                                <p className="text-sm text-muted-foreground max-w-lg px-4">
+                                    💡 Models with strong code generation capabilities (e.g., GPT-5, Claude Sonnet 4.5) provide the best experience with Data Formulator.
+                                </p>
+                            </div>
+                        </div>
                         {footer}
-                    </Box>
+                    </div>
                 )}
             </DndProvider>
         </Box>);

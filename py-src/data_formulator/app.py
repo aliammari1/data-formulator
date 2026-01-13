@@ -75,6 +75,10 @@ if not app.config['CLI_ARGS']['disable_database']:
     app.register_blueprint(tables_bp)
 app.register_blueprint(agent_bp)
 
+# Register voice routes for voice-to-voice functionality
+from data_formulator.voice_routes import voice_bp
+app.register_blueprint(voice_bp)
+
 # Get logger for this module (logging config moved to run_app function)
 logger = logging.getLogger(__name__)
 

@@ -2,41 +2,47 @@
 // Licensed under the MIT License.
 
 import { FC, useRef, useEffect } from 'react'
-import { Divider } from "@mui/material";
-import {
-		Card,
-		Box,
-		Typography,
-		Dialog,
-        DialogTitle,
-        DialogContent,
-        DialogActions,
-        Button,
-        styled,
-        CardContent,
-} from '@mui/material';
-
 import React from 'react';
-import { alpha, useTheme } from '@mui/material/styles';
 import { CodeBox } from './VisualizationView';
 
-export const GroupHeader = styled('div')(({ theme }) => ({
-    position: 'sticky',
-    top: '-8px',
-    padding: '4px 4px',
-    color: "darkgray",
-    fontSize: "12px",
-}));
-  
-export const GroupItems = styled('ul')({
-    padding: 0,
-});
+import { 
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { MessageCircle, User, Bot, X } from 'lucide-react';
+import { cn } from "@/lib/utils";
+import { VoiceOutput } from '@/components/VoiceComponents';
+
+export const GroupHeader = ({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div 
+        className={cn(
+            "sticky -top-2 p-1 text-xs text-muted-foreground",
+            className
+        )} 
+        {...props}
+    >
+        {children}
+    </div>
+);
+
+export const GroupItems = ({ children, className, ...props }: React.HTMLAttributes<HTMLUListElement>) => (
+    <ul className={cn("p-0", className)} {...props}>
+        {children}
+    </ul>
+);
 
 // Function to parse message content and render code blocks
 const renderMessageContent = (role: string, message: string) => {
     // Split message by code blocks (```language ... ```)
     const codeBlockRegex = /```(\w+)?\n([\s\S]*?)```/g;
-    const parts = [];
+    const parts: React.ReactNode[] = [];
     let lastIndex = 0;
     let match;
 
@@ -46,14 +52,9 @@ const renderMessageContent = (role: string, message: string) => {
             const textContent = message.slice(lastIndex, match.index);
             if (textContent.trim()) {
                 parts.push(
-                    <Typography key={`text-${lastIndex}`} sx={{ 
-                        fontSize: 13, 
-                        whiteSpace: 'pre-wrap',
-                        lineHeight: 1.4,
-                        marginBottom: 1
-                    }}>
+                    <p key={`text-${lastIndex}`} className="text-sm whitespace-pre-wrap leading-relaxed mb-2">
                         {textContent}
-                    </Typography>
+                    </p>
                 );
             }
         }
@@ -62,13 +63,9 @@ const renderMessageContent = (role: string, message: string) => {
         const language = match[1] || 'text';
         const code = match[2].trim();
         parts.push(
-            <Box key={`code-${match.index}`} sx={{ 
-                margin: '0',
-                borderRadius: 1,
-                overflow: 'auto'
-            }}>
+            <div key={`code-${match.index}`} className="my-2 rounded-lg overflow-auto">
                 <CodeBox code={code} language={language} fontSize={10} />
-            </Box>
+            </div>
         );
 
         lastIndex = match.index + match[0].length;
@@ -79,13 +76,9 @@ const renderMessageContent = (role: string, message: string) => {
         const textContent = message.slice(lastIndex);
         if (textContent.trim()) {
             parts.push(
-                <Typography key={`text-${lastIndex}`} sx={{ 
-                    fontSize: 13, 
-                    whiteSpace: 'pre-wrap',
-                    lineHeight: 1.4
-                }}>
+                <p key={`text-${lastIndex}`} className="text-sm whitespace-pre-wrap leading-relaxed">
                     {textContent}
-                </Typography>
+                </p>
             );
         }
     }
@@ -93,17 +86,13 @@ const renderMessageContent = (role: string, message: string) => {
     // If no code blocks found, return original message
     if (parts.length === 0) {
         return (
-            <Typography sx={{ 
-                fontSize: 13, 
-                whiteSpace: 'pre-wrap',
-                lineHeight: 1.4
-            }}>
+            <p className="text-sm whitespace-pre-wrap leading-relaxed">
                 {message}
-            </Typography>
+            </p>
         );
     }
 
-    return <Box>{parts}</Box>;
+    return <div className="space-y-1">{parts}</div>;
 };
 
 export interface ChatDialogProps {
@@ -114,95 +103,118 @@ export interface ChatDialogProps {
 }
 
 export const ChatDialog: FC<ChatDialogProps> = function ChatDialog({code, dialog, open, handleCloseDialog}) {
-    let theme = useTheme();
-    const dialogContentRef = useRef<HTMLDivElement>(null);
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
 
     // Auto-scroll to bottom when dialog opens
     useEffect(() => {
         if (open) {
             setTimeout(() => {
-                if (dialogContentRef.current) {
-                    dialogContentRef.current.scrollTop = dialogContentRef.current.scrollHeight;
+                if (scrollAreaRef.current) {
+                    scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
                 }
             }, 100);
         }
     }, [open]);
 
- 
-    let body = undefined
+    let body = undefined;
     if (dialog == undefined) {
-        body = <Box sx={{display: "flex", overflowX: "auto", flexDirection: "column", 
-                         justifyContent: "space-between", position: "relative", marginTop: "10px", minHeight: "50px"}}>
-            <Typography sx={{ fontSize: 14 }}  color="text.secondary" gutterBottom>
-                {"There is no conversation history yet"}
-            </Typography>
-        </Box>
+        body = (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
+                    <MessageCircle className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <p className="text-sm font-medium text-foreground mb-1">
+                    No conversation yet
+                </p>
+                <p className="text-xs text-muted-foreground">
+                    Start a conversation to see the dialog here
+                </p>
+            </div>
+        );
     } else {
-        body = 
-            <Box sx={{display: "flex", overflowX: "auto", flexDirection: "column", 
-                    justifyContent: "space-between", position: "relative", marginTop: "10px", minHeight: "50px"}}>
-                
+        body = (
+            <div className="flex flex-col gap-4 py-4">
                 {/* filter out system messages */}
                 {dialog.filter(entry => entry["role"] != 'system').map((chatEntry, idx) => {
-
                     let role = chatEntry['role'];
-                    let message : any = chatEntry['content'] as string;
+                    let message: string = chatEntry['content'] as string;
                     const isUser = role === 'user';
 
                     message = message.trimEnd();
 
-                    return <Card variant="outlined" key={`chat-dialog-${idx}`}
-                        sx={{
-                            minWidth: "280px", 
-                            maxWidth: "1920px", 
-                            display: "flex", 
-                            flexGrow: 1, 
-                            margin: "6px",
-                            backgroundColor: isUser ? alpha(theme.palette.primary.main, 0.05) : alpha(theme.palette.custom.main, 0.05),
-                            border: isUser ? "1px solid" : "1px solid",
-                            borderColor: isUser ? alpha(theme.palette.primary.main, 0.2) : alpha(theme.palette.custom.main, 0.2),
-                            borderRadius: 2,
-                        }}>
-                        <CardContent sx={{display: "flex", flexDirection: "column", flexGrow: 1, padding: '8px 12px', paddingBottom: '8px !important'}}>
-                            <Typography sx={{ 
-                                fontSize: 12, 
-                                fontWeight: 600,
-                                color: isUser ? 'primary.main' : 'custom.main',
-                                textTransform: 'uppercase',
-                                letterSpacing: '0.5px'
-                            }} gutterBottom>
-                                {isUser ? 'You' : 'Assistant'}
-                            </Typography>
-                            <Box sx={{display: 'flex', flexDirection: "column", alignItems: "flex-start", flex: 'auto'}}>
-                                <Box sx={{maxWidth: 800, width: 'fit-content', display: 'flex', flexDirection: 'column'}}>
-                                    <Box sx={{ 
-                                        color: isUser ? 'primary.dark' : 'custom.dark',
-                                    }}>
-                                        {renderMessageContent(role, message)}
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </CardContent>
-                    </Card>
+                    return (
+                        <div 
+                            key={`chat-dialog-${idx}`}
+                            className={cn(
+                                "flex gap-3",
+                                isUser && "flex-row-reverse"
+                            )}
+                        >
+                            {/* Avatar */}
+                            <div className={cn(
+                                "shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
+                                isUser ? "bg-foreground" : "bg-muted"
+                            )}>
+                                {isUser 
+                                    ? <User className="h-4 w-4 text-background" />
+                                    : <Bot className="h-4 w-4 text-muted-foreground" />
+                                }
+                            </div>
+                            
+                            {/* Message Bubble */}
+                            <div className={cn(
+                                "flex-1 rounded-xl px-4 py-3",
+                                isUser 
+                                    ? "bg-primary text-primary-foreground" 
+                                    : "bg-muted text-foreground"
+                            )}>
+                                <div className="flex items-center justify-between gap-2 mb-1.5">
+                                    <span className="text-xs font-medium opacity-70">
+                                        {isUser ? 'You' : 'Assistant'}
+                                    </span>
+                                    {/* Voice output for assistant messages */}
+                                    {!isUser && (
+                                        <VoiceOutput 
+                                            text={message.replace(/```[\s\S]*?```/g, '')} 
+                                            className="opacity-60 hover:opacity-100"
+                                        />
+                                    )}
+                                </div>
+                                <div className="text-sm whitespace-pre-wrap wrap-break-word">
+                                    {renderMessageContent(role, message)}
+                                </div>
+                            </div>
+                        </div>
+                    );
                 })}
-                
-            </Box>
+            </div>
+        );
     }
 
     return (
-        <Dialog
-            sx={{ '& .MuiDialog-paper': { maxWidth: '95%', maxHeight: '90%', minWidth: 300 } }}
-            maxWidth={false}
-            open={open}
-            key="chat-dialog-dialog"
-        >
-            <DialogTitle><Typography>Dialog with Agents</Typography></DialogTitle>
-            <DialogContent ref={dialogContentRef} sx={{overflowY: "auto", overflowX: "hidden"}} dividers>
-                {body}
+        <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleCloseDialog()}>
+            <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0">
+                <DialogHeader className="shrink-0 px-6 py-4 border-b border-border">
+                    <DialogTitle className="flex items-center gap-2 text-base">
+                        <MessageCircle className="h-4 w-4" />
+                        Conversation
+                    </DialogTitle>
+                    <DialogDescription className="text-xs">
+                        View the conversation history with the AI assistant
+                    </DialogDescription>
+                </DialogHeader>
+                
+                <div ref={scrollAreaRef} className="flex-1 overflow-y-auto px-6">
+                    {body}
+                </div>
+                
+                <DialogFooter className="shrink-0 px-6 py-4 border-t border-border bg-muted/30">
+                    <Button onClick={handleCloseDialog} variant="outline" size="sm" className="gap-1.5">
+                        <X className="h-3.5 w-3.5" />
+                        Close
+                    </Button>
+                </DialogFooter>
             </DialogContent>
-            <DialogActions>
-                <Button onClick={()=>{ handleCloseDialog() }}>Close</Button>
-            </DialogActions>
         </Dialog>
     );
 }

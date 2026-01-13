@@ -34,6 +34,8 @@ export default [
       "no-useless-escape": "off",
       "prefer-const": "off",
       "react/no-unescaped-entities": "off",
+      "react/prop-types": "off",
+      "react/display-name": "off",
     }
   }
 ];

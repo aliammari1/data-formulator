@@ -2,28 +2,31 @@
 // Licensed under the MIT License.
 
 import React, { FC, useState, useEffect } from 'react';
-import {
-    Button,
-    Typography,
-    Box,
-    DialogTitle,
-    Dialog,
-    DialogContent,
-    DialogActions,
-    Divider,
-    IconButton,
-    useTheme,
-    Badge,
-    alpha,
-} from '@mui/material';
-import RuleIcon from '@mui/icons-material/Rule';
-import CloseIcon from '@mui/icons-material/Close';
 import { useDispatch, useSelector } from 'react-redux';
 import { DataFormulatorState, dfActions } from '../app/dfSlice';
 import Editor from 'react-simple-code-editor';
 
+import { 
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+    Scale, 
+    X, 
+    Code2, 
+    Compass,
+    Save
+} from 'lucide-react';
+import { cn } from "@/lib/utils";
+
 export const AgentRulesDialog: React.FC = () => {
-    const theme = useTheme();
     const [open, setOpen] = useState(false);
     const dispatch = useDispatch();
     const agentRules = useSelector((state: DataFormulatorState) => state.agentRules);
@@ -96,163 +99,146 @@ export const AgentRulesDialog: React.FC = () => {
 
     return (
         <>
-            <Badge 
-                color="primary" 
-                variant="standard" 
-                invisible={ruleCount === 0}
-                badgeContent={ruleCount}
-                sx={{
-                    '& .MuiBadge-badge': {
-                        minWidth: 0,
-                        height: 12,
-                        fontSize: 8,
-                        top: 12,
-                        right: 8,
-                        px: 0.5,
-                        color: theme.palette.primary.main,
-                        background: alpha(theme.palette.primary.light, 0.2),
-                    },
-                }}
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setOpen(true)}
+                className="gap-2 h-8 text-foreground/80 hover:text-foreground relative"
             >
-                <Button
-                    variant="text"
-                    sx={{ textTransform: 'none' }}
-                    onClick={() => setOpen(true)}
-                    startIcon={<RuleIcon />}
-                >
-                    Agent Rules
-                </Button>
-            </Badge>
-            <Dialog
-                onClose={handleClose}
-                open={open}
-                sx={{ '& .MuiDialog-paper': { maxWidth: 800, maxHeight: '90vh', width: '90%' } }}
-                maxWidth={false}
-            >
-                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Typography variant="h6">Agent Rules</Typography>
-                    <IconButton
-                        aria-label="close"
-                        onClick={handleClose}
-                        sx={{ color: (theme) => theme.palette.grey[500] }}
+                <Scale className="h-4 w-4" />
+                Agent Rules
+                {ruleCount > 0 && (
+                    <Badge 
+                        variant="secondary" 
+                        className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] bg-primary/10 text-primary"
                     >
-                        <CloseIcon />
-                    </IconButton>
-                </DialogTitle>
-                <DialogContent>
-                    {/* Coding Agent Rules Section */}
-                    <Box sx={{ mb: 3 }}>
-                        <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: 'primary.main' }}>
-                            Coding Rules
-                            <Typography variant="body2" component="span" color="text.secondary" sx={{ ml: 1, fontSize: 12 }}>
-                                (Rules that guide AI agents when generating code to transform data and recommend visualizations.)
-                            </Typography>
-                        </Typography>
-                        
-                        <Box
-                            sx={{
-                                border: `1px solid ${theme.palette.primary.main}`,
-                                borderRadius: 1,
-                                overflow: 'auto',
-                                height: 180,
-                                boxShadow: `0 2px 8px ${theme.palette.primary.main}40`,
-                                transition: 'box-shadow 0.3s ease-in-out',
-                                '&:hover': {
-                                    boxShadow: `0 4px 12px ${theme.palette.primary.main}60`,
-                                }
-                            }}
-                        >
-                            <Editor
-                                value={codingRules}
-                                onValueChange={(code) => setCodingRules(code)}
-                                highlight={(code) => code}
-                                padding={16}
-                                placeholder={codingPlaceholder}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Tab' && !codingRules) {
-                                        e.preventDefault();
-                                        setCodingRules(codingPlaceholder);
-                                    }
-                                }}
-                                style={{
-                                    fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                                    fontSize: 10,
-                                    lineHeight: 1.2,
-                                    minHeight: 180,
-                                    whiteSpace: 'pre-wrap',
-                                    outline: 'none',
-                                    resize: 'none',
-                                }}
-                            />
-                        </Box>
-                    </Box>
+                        {ruleCount}
+                    </Badge>
+                )}
+            </Button>
+            <Dialog open={open} onOpenChange={(isOpen) => !isOpen && handleClose()}>
+                <DialogContent className="max-w-3xl max-h-[90vh]">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Scale className="h-5 w-5 text-primary" />
+                            Agent Rules
+                        </DialogTitle>
+                        <DialogDescription>
+                            Configure rules to guide AI agents when generating code and exploring data
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <ScrollArea className="max-h-[65vh] pr-4">
+                        <div className="space-y-6">
+                            {/* Coding Agent Rules Section */}
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 rounded-md bg-primary/10">
+                                        <Code2 className="h-4 w-4 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-primary">Coding Rules</h3>
+                                        <p className="text-xs text-muted-foreground">
+                                            Rules that guide AI agents when generating code to transform data and recommend visualizations.
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div className="border border-primary/30 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 hover:border-primary/50">
+                                    <Editor
+                                        value={codingRules}
+                                        onValueChange={(code) => setCodingRules(code)}
+                                        highlight={(code) => code}
+                                        padding={16}
+                                        placeholder={codingPlaceholder}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Tab' && !codingRules) {
+                                                e.preventDefault();
+                                                setCodingRules(codingPlaceholder);
+                                            }
+                                        }}
+                                        style={{
+                                            fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+                                            fontSize: 11,
+                                            lineHeight: 1.4,
+                                            minHeight: 160,
+                                            whiteSpace: 'pre-wrap',
+                                            outline: 'none',
+                                            resize: 'none',
+                                            background: 'hsl(var(--muted)/0.3)',
+                                        }}
+                                    />
+                                </div>
+                            </div>
 
-                    <Divider sx={{ my: 3 }} />
+                            <Separator />
 
-                    {/* Exploration Agent Rules Section */}
-                    <Box>
-                        <Typography variant="body2" sx={{ mb: 1, fontWeight: 600, color: 'secondary.main' }}>
-                            Exploration Rules
-                            <Typography variant="body2" component="span" color="text.secondary" sx={{ ml: 1, fontSize: 12 }}>
-                                (Rules that guide AI agents when exploring datasets, generating questions, and discovering insights)
-                            </Typography>
-                        </Typography>
-                        <Box
-                            sx={{
-                                border: `1px solid ${theme.palette.secondary.main}`,
-                                borderRadius: 1,
-                                overflow: 'auto',
-                                height: 180,
-                                boxShadow: `0 2px 8px ${theme.palette.secondary.main}40`,
-                                transition: 'box-shadow 0.3s ease-in-out',
-                                '&:hover': {
-                                    boxShadow: `0 4px 12px ${theme.palette.secondary.main}60`,
-                                }
-                            }}
-                        >
-                            <Editor
-                                value={explorationRules}
-                                onValueChange={(code) => setExplorationRules(code)}
-                                highlight={(code) => code}
-                                padding={16}
-                                placeholder={explorationPlaceholder}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Tab' && !explorationRules) {
-                                        e.preventDefault();
-                                        setExplorationRules(explorationPlaceholder);
-                                    }
-                                }}
-                                style={{
-                                    fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
-                                    fontSize: 10,
-                                    lineHeight: 1.2,
-                                    minHeight: 180,
-                                    whiteSpace: 'pre-wrap',
-                                    outline: 'none',
-                                    resize: 'none',
-                                }}
-                            />
-                        </Box>
-                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                            <Button
-                                variant="text"
-                                disabled={!hasCodingChanges}
-                                onClick={handleSaveCoding}
-                                sx={{ textTransform: 'none' }}
-                            >
-                                Save Coding Rules
-                            </Button>
-                            <Button
-                                variant="text"
-                                disabled={!hasExplorationChanges}
-                                onClick={handleSaveExploration}
-                                color="secondary"
-                                sx={{ textTransform: 'none' }}
-                            >
-                                Save Exploration Rules
-                            </Button>
-                        </Box>
-                    </Box>
+                            {/* Exploration Agent Rules Section */}
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 rounded-md bg-secondary">
+                                        <Compass className="h-4 w-4 text-secondary-foreground" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-semibold text-secondary-foreground">Exploration Rules</h3>
+                                        <p className="text-xs text-muted-foreground">
+                                            Rules that guide AI agents when exploring datasets, generating questions, and discovering insights.
+                                        </p>
+                                    </div>
+                                </div>
+                                
+                                <div className="border border-secondary/50 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 hover:border-secondary/70">
+                                    <Editor
+                                        value={explorationRules}
+                                        onValueChange={(code) => setExplorationRules(code)}
+                                        highlight={(code) => code}
+                                        padding={16}
+                                        placeholder={explorationPlaceholder}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Tab' && !explorationRules) {
+                                                e.preventDefault();
+                                                setExplorationRules(explorationPlaceholder);
+                                            }
+                                        }}
+                                        style={{
+                                            fontFamily: 'Monaco, Menlo, "Ubuntu Mono", monospace',
+                                            fontSize: 11,
+                                            lineHeight: 1.4,
+                                            minHeight: 160,
+                                            whiteSpace: 'pre-wrap',
+                                            outline: 'none',
+                                            resize: 'none',
+                                            background: 'hsl(var(--muted)/0.3)',
+                                        }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Save Buttons */}
+                            <div className="flex justify-end gap-2 pt-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={!hasCodingChanges}
+                                    onClick={handleSaveCoding}
+                                    className="gap-2"
+                                >
+                                    <Save className="h-3.5 w-3.5" />
+                                    Save Coding Rules
+                                </Button>
+                                <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    disabled={!hasExplorationChanges}
+                                    onClick={handleSaveExploration}
+                                    className="gap-2"
+                                >
+                                    <Save className="h-3.5 w-3.5" />
+                                    Save Exploration Rules
+                                </Button>
+                            </div>
+                        </div>
+                    </ScrollArea>
                 </DialogContent>
             </Dialog>
         </>
