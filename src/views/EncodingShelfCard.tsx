@@ -7,35 +7,6 @@ import { DataFormulatorState, dfActions, dfSelectors, fetchCodeExpl, fetchFieldS
 
 import embed from 'vega-embed';
 
-import {
-    Box,
-    Typography,
-    FormControl,
-    InputLabel,
-    Select,
-    MenuItem,
-    ListSubheader,
-    ListItemIcon,
-    ListItemText,
-    IconButton,
-    Tooltip,
-    TextField,
-    Card,
-    Chip,
-    Autocomplete,
-    Menu,
-    alpha,
-    useTheme,
-    SxProps,
-    Theme,
-    CircularProgress,
-    Button,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-} from '@mui/material';
-
 import React from 'react';
 import { ThinkingBufferEffect } from '../components/FunComponents';
 import { Channel, Chart, FieldItem, Trigger, duplicateChart } from "../components/ComponentType";
@@ -50,21 +21,26 @@ import { EncodingBox } from './EncodingBox';
 
 import { ChannelGroups, CHART_TEMPLATES, getChartChannels, getChartTemplate } from '../components/ChartTemplates';
 import { checkChartAvailability, getDataTable } from './VisualizationView';
-import TableRowsIcon from '@mui/icons-material/TableRowsOutlined';
-import ChangeCircleOutlinedIcon from '@mui/icons-material/ChangeCircleOutlined';
-import AddIcon from '@mui/icons-material/Add';
-import CheckIcon from '@mui/icons-material/Check';
 import { ThinkingBanner } from './DataThread';
 
 import { AppDispatch } from '../app/store';
-import PrecisionManufacturing from '@mui/icons-material/PrecisionManufacturing';
 import { Type } from '../data/types';
-import DeleteIcon from '@mui/icons-material/Delete';
-import CloseIcon from '@mui/icons-material/Close';
-import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
-import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
-import BugReportIcon from '@mui/icons-material/BugReport';
 import { IdeaChip } from './ChartRecBox';
+
+// shadcn/ui components
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
+
+// lucide-react icons
+import { Plus, X, Check, RefreshCw, Lightbulb, Bug, Factory, Table as TableIcon } from 'lucide-react';
 
 // Property and state of an encoding shelf
 export interface EncodingShelfCardProps { 
@@ -100,7 +76,7 @@ let selectBaseTables = (activeFields: FieldItem[], currentTable: DictTable, tabl
 }
 
 // Add this utility function before the TriggerCard component
-export const renderTextWithEmphasis = (text: string, highlightChipSx?: SxProps<Theme>) => {
+export const renderTextWithEmphasis = (text: string, highlightClassName?: string) => {
     
     text = text.replace(/_/g, '_\u200B');
     // Split the prompt by ** patterns and create an array of text and highlighted segments
@@ -111,18 +87,15 @@ export const renderTextWithEmphasis = (text: string, highlightChipSx?: SxProps<T
             // This is a highlighted part - remove the ** and wrap with styled component
             const content = part.slice(2, -2).replaceAll('_', ' ');
             return (
-                <Typography
+                <span
                     key={index}
-                    component="span"
-                    sx={{
-                        color: 'inherit',
-                        padding: '0px 2px',
-                        borderRadius: '4px',
-                        ...highlightChipSx
-                    }}
+                    className={cn(
+                        "text-inherit px-0.5 rounded",
+                        highlightClassName
+                    )}
                 >
                     {content}
-                </Typography>
+                </span>
             );
         }
         return part;
@@ -133,10 +106,8 @@ export const TriggerCard: FC<{
     className?: string, 
     trigger: Trigger, 
     hideFields?: boolean, 
-    mini?: boolean,
-    sx?: SxProps<Theme>}> = function ({ className, trigger, hideFields, mini = false, sx }) {
-
-    let theme = useTheme();
+    mini?: boolean
+}> = function ({ className, trigger, hideFields, mini = false }) {
 
     let fieldItems = useSelector((state: DataFormulatorState) => state.conceptShelfItems);
 
@@ -150,7 +121,7 @@ export const TriggerCard: FC<{
     }
 
     let encodingComp : any = '';
-    let encFields = [];
+    let encFields: string[] = [];
 
     if (trigger.chart) {
 
@@ -173,13 +144,13 @@ export const TriggerCard: FC<{
             .map(([channel, encoding], index) => {
                 let field = fieldItems.find(f => f.id == encoding.fieldID) as FieldItem;
                 return [index > 0 ? '⨉' : '', 
-                        <Chip 
+                        <Badge 
                             key={`trigger-${channel}-${field?.id}`}
-                            sx={{color:'inherit', maxWidth: '110px', m: 0.25,
-                                   height: 18, fontSize: 12, borderRadius: '4px', 
-                                   border: '1px solid rgb(250 235 215)', background: 'rgb(250 235 215 / 70%)',
-                                   '& .MuiChip-label': { px: 0.5 }}} 
-                              label={`${field?.name}`} />]
+                            variant="outline"
+                            className="text-inherit max-w-[110px] m-0.5 h-[18px] text-xs rounded border border-[rgb(250,235,215)] bg-[rgb(250,235,215,0.7)] px-0.5"
+                        >
+                            {field?.name}
+                        </Badge>]
             })
     }
 
@@ -191,63 +162,52 @@ export const TriggerCard: FC<{
     }
 
     // Process the prompt to highlight content in ** **
-    const processedPrompt = renderTextWithEmphasis(prompt, {
-        fontSize: mini ? 10 : 12, padding: '1px 4px',
-        borderRadius: '4px',
-        background: alpha(theme.palette.custom.main, 0.08), 
-    });
+    const processedPrompt = renderTextWithEmphasis(prompt, cn(
+        mini ? "text-[10px]" : "text-xs",
+        "px-1 rounded bg-primary/10"
+    ));
 
     if (mini) {
-        return <Typography component="div" sx={{
-            ml: '7px', borderLeft: '3px solid', 
-            borderColor: alpha(theme.palette.custom.main, 0.5), 
-            paddingLeft: '8px', 
-            fontSize: '10px', color: theme.palette.text.secondary,
-            my: '2px', textWrap: 'balance',
-            '&:hover': {
-                borderLeft: '3px solid',
-                borderColor: theme.palette.custom.main,
-                cursor: 'pointer',
-                color: theme.palette.text.primary,
-            },
-            '& .MuiChip-label': { px: 0.5, fontSize: "10px"},
-        }} onClick={handleClick}>
-            {processedPrompt} 
-            {hideFields ? "" : encodingComp}
-        </Typography> 
+        return (
+            <div 
+                className={cn(
+                    "ml-[7px] border-l-[3px] border-primary/50 pl-2",
+                    "text-[10px] text-muted-foreground my-0.5 text-balance",
+                    "hover:border-primary hover:cursor-pointer hover:text-foreground"
+                )}
+                onClick={handleClick}
+            >
+                {processedPrompt} 
+                {hideFields ? "" : encodingComp}
+            </div>
+        );
     }
 
-    return  <Card className={`${className}`} variant="outlined" 
-        sx={{
-            cursor: 'pointer', backgroundColor: alpha(theme.palette.custom.main, 0.05), 
-            fontSize: '12px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '2px',
-            '&:hover': { 
-                transform: "translate(0px, -1px)",  
-                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-            },
-            '& .MuiChip-label': { px: 0.5, fontSize: "10px"},
-            ...sx,
-        }} 
-        onClick={handleClick}>
-        <Box sx={{mx: 1, my: 0.5}}>
-            {hideFields ? "" : <Typography component="div" fontSize="inherit" sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
-                            color: 'rgba(0,0,0,0.7)'}}>{encodingComp}</Typography>}
-            <Typography fontSize="inherit" sx={{
-                textAlign: 'center', width: 'fit-content',
-                minWidth: '40px',
-                color: 'rgba(0,0,0,0.7)'}}>
-                    {prompt.length > 0 && <PrecisionManufacturing sx={{
-                        color: 'darkgray', 
-                        width: '14px', 
-                        height: '14px',
-                        mr: 0.5,
-                        verticalAlign: 'text-bottom',
-                        display: 'inline-block'
-                    }} />}
+    return (
+        <Card 
+            className={cn(
+                "cursor-pointer bg-primary/5",
+                "text-xs flex flex-row items-center gap-0.5",
+                "hover:-translate-y-px hover:shadow-md",
+                className
+            )} 
+            onClick={handleClick}
+        >
+            <div className="mx-2 my-1">
+                {hideFields ? "" : (
+                    <div className="flex flex-wrap justify-center text-black/70">
+                        {encodingComp}
+                    </div>
+                )}
+                <p className="text-center w-fit min-w-[40px] text-black/70 text-xs">
+                    {prompt.length > 0 && (
+                        <Factory className="text-gray-400 w-3.5 h-3.5 mr-1 align-text-bottom inline-block" />
+                    )}
                     {processedPrompt}
-            </Typography>
-        </Box>
-    </Card>
+                </p>
+            </div>
+        </Card>
+    );
 }
 
 // Add this component before EncodingShelfCard
@@ -258,107 +218,89 @@ const UserActionTableSelector: FC<{
     updateUserSelectedActionTableIds: (tableIds: string[]) => void,
     requiredTableIds?: string[]
 }> = ({ requiredActionTableIds, userSelectedActionTableIds, tables, updateUserSelectedActionTableIds, requiredTableIds = [] }) => {
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
+    const [open, setOpen] = useState(false);
 
     let actionTableIds = [...requiredActionTableIds, ...userSelectedActionTableIds.filter(id => !requiredActionTableIds.includes(id))];
-
-    const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
 
     const handleTableSelect = (table: DictTable) => {
         if (!actionTableIds.includes(table.id)) {
             updateUserSelectedActionTableIds([...userSelectedActionTableIds, table.id]);
         }
-        handleClose();
+        setOpen(false);
     };
 
     return (
-        <Box sx={{ 
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '2px',
-            padding: '4px',
-            marginBottom: 0.5,
-        }}>
+        <div className="flex flex-wrap gap-0.5 p-1 mb-1">
             {actionTableIds.map((tableId) => {
                 const isRequired = requiredTableIds.includes(tableId);
                 return (
-                    <Chip
+                    <Badge
                         key={tableId}
-                        label={tables.find(t => t.id == tableId)?.displayId}
-                        size="small"
-                        sx={{
-                            height: 16,
-                            fontSize: '10px',
-                            borderRadius: '0px',
-                            bgcolor: isRequired ? 'rgba(25, 118, 210, 0.2)' : 'rgba(25, 118, 210, 0.1)', // darker blue for required
-                            color: 'rgba(0, 0, 0, 0.7)',
-                            '& .MuiChip-label': {
-                                pl: '4px',
-                                pr: '6px'
-                            }
-                        }}
-                        deleteIcon={<CloseIcon sx={{ fontSize: '8px', width: '12px', height: '12px' }} />}
-                        onDelete={isRequired ? undefined : () => updateUserSelectedActionTableIds(actionTableIds.filter(id => id !== tableId))}
-                    />
+                        variant="outline"
+                        className={cn(
+                            "h-4 text-[10px] rounded-none text-black/70 pl-1 pr-1.5",
+                            isRequired ? "bg-blue-600/20" : "bg-blue-600/10"
+                        )}
+                    >
+                        {tables.find(t => t.id == tableId)?.displayId}
+                        {!isRequired && (
+                            <button 
+                                onClick={() => updateUserSelectedActionTableIds(actionTableIds.filter(id => id !== tableId))}
+                                className="ml-1 hover:bg-black/10 rounded"
+                            >
+                                <X className="w-2 h-2" />
+                            </button>
+                        )}
+                    </Badge>
                 );
             })}
-            <Tooltip title="add more base tables for data formulation">
-                <span>
-                    <IconButton
-                        size="small"
-                        onClick={handleClick}
-                        sx={{ 
-                            width: 16,
-                            height: 16,
-                            fontSize: '10px',
-                            padding: 0
-                        }}
-                    >
-                        <AddIcon fontSize="inherit" />
-                    </IconButton>
-                </span>
-            </Tooltip>
-            <Menu
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-            >
-                {tables
-                    .map((table) => {
-                        const isSelected = !!actionTableIds.find(t => t === table.id);
-                        return (
-                            <MenuItem 
-                                disabled={isSelected}
-                                key={table.id}
-                                onClick={() => handleTableSelect(table)}
-                                sx={{ 
-                                    fontSize: '12px',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
-                                }}
-                            >
-                                {table.displayId}
-                            </MenuItem>
-                        );
-                    })
-                }
-            </Menu>
-        </Box>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Popover open={open} onOpenChange={setOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="w-4 h-4 p-0"
+                                >
+                                    <Plus className="w-2.5 h-2.5" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-48 p-1">
+                                {tables.map((table) => {
+                                    const isSelected = !!actionTableIds.find(t => t === table.id);
+                                    return (
+                                        <button 
+                                            key={table.id}
+                                            disabled={isSelected}
+                                            onClick={() => handleTableSelect(table)}
+                                            className={cn(
+                                                "w-full text-left text-xs px-2 py-1.5 rounded",
+                                                "flex justify-between items-center",
+                                                isSelected 
+                                                    ? "opacity-50 cursor-not-allowed" 
+                                                    : "hover:bg-accent cursor-pointer"
+                                            )}
+                                        >
+                                            {table.displayId}
+                                        </button>
+                                    );
+                                })}
+                            </PopoverContent>
+                        </Popover>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p className="text-xs">add more base tables for data formulation</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div>
     );
 };
 
 
 export const EncodingShelfCard: FC<EncodingShelfCardProps> = function ({ chartId }) {
-    const theme = useTheme();
-
     // reference to states
     const tables = useSelector((state: DataFormulatorState) => state.tables);
     const config = useSelector((state: DataFormulatorState) => state.config);
@@ -451,11 +393,11 @@ export const EncodingShelfCard: FC<EncodingShelfCardProps> = function ({ chartId
         .filter(([group, channelList]) => channelList.some(ch => Object.keys(encodingMap).includes(ch)))
         .map(([group, channelList]) => {
 
-            let component = <Box key={`encoding-group-box-${group}`}>
-                <Typography key={`encoding-group-${group}`} sx={{ fontSize: 10, color: "text.secondary", marginTop: "6px", marginBottom: "2px" }}>{group}</Typography>
+            let component = <div key={`encoding-group-box-${group}`}>
+                <p key={`encoding-group-${group}`} className="text-[10px] text-muted-foreground mt-1.5 mb-0.5">{group}</p>
                 {channelList.filter(channel => Object.keys(encodingMap).includes(channel))
                     .map(channel => <EncodingBox key={`shelf-${channel}`} channel={channel as Channel} chartId={chartId} tableId={currentTable.id} />)}
-            </Box>
+            </div>
             return component;
         });
 
@@ -969,130 +911,103 @@ export const EncodingShelfCard: FC<EncodingShelfCardProps> = function ({ chartId
     // zip multiple components together
     const w: any = (a: any[], b: any[]) => a.length ? [a[0], ...w(b, a.slice(1))] : b;
 
-    let formulateInputBox = <Box key='text-input-boxes' sx={{display: 'flex', flexDirection: 'row', flex: 1, padding: '0px 4px'}}>
-        <TextField
-            id="outlined-multiline-flexible"
-            sx={{
-                "& .MuiInputLabel-root": { fontSize: '12px' },
-                "& .MuiInput-input": { fontSize: '12px' },
-            }}
-            onChange={(event: any) => {
-                setPrompt(event.target.value);
-            }}
-            onKeyDown={(event: any) => {
-                if (event.key === 'Enter' && !event.shiftKey) {
-                    event.preventDefault();
-                    if (prompt.trim().length > 0) {
-                        deriveNewData(prompt, 'formulate');
+    let formulateInputBox = (
+        <div key='text-input-boxes' className="flex flex-row flex-1 px-1">
+            <Textarea
+                id="outlined-multiline-flexible"
+                className="text-xs min-h-[24px] resize-none border-0 border-b focus-visible:ring-0 rounded-none"
+                onChange={(event: React.ChangeEvent<HTMLTextAreaElement>) => {
+                    setPrompt(event.target.value);
+                }}
+                onKeyDown={(event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                        event.preventDefault();
+                        if (prompt.trim().length > 0) {
+                            deriveNewData(prompt, 'formulate');
+                        }
                     }
-                }
-            }}
-            slotProps={{
-                inputLabel: { shrink: true },
-            }}
-            value={prompt}
-            label=""
-            placeholder={['Auto'].includes(chart.chartType) 
-                ? (isChartAvailable ? "what do you want to visualize?" : " ✏️ what do you want to visualize?")
-                : (isChartAvailable ? "formulate data" : " ✏️  formulate data")}
-            fullWidth
-            multiline
-            variant="standard"
-            size="small"
-            maxRows={4} 
-            minRows={1}
-        />
-        {trigger ? 
-            <Box sx={{display: 'flex'}}>
-                <Tooltip title={<Typography sx={{fontSize: 11}}>formulate and override <TableRowsIcon sx={{fontSize: 10, marginBottom: '-1px'}}/>{trigger.resultTableId}</Typography>}>
-                    <span>
-                        <IconButton sx={{ marginLeft: "0"}} size="small"
-                             color={"warning"} onClick={() => { 
-                                deriveNewData(trigger.instruction, 'formulate', trigger.resultTableId); 
-                            }}>
-                            <ChangeCircleOutlinedIcon fontSize="small" />
-                        </IconButton>
-                    </span>
-                </Tooltip>
-            </Box>
-            : 
-            <Tooltip title={`Formulate`}>
-                <span>
-                    <IconButton sx={{ marginLeft: "0"}} 
-                         color={"primary"} onClick={() => { deriveNewData(prompt, 'formulate'); }}>
-                        <PrecisionManufacturing sx={{
-                            ...(isChartAvailable ? {} : {
-                                animation: 'pulseAttention 3s ease-in-out infinite',
-                                '@keyframes pulseAttention': {
-                                    '0%, 90%': {
-                                        scale: 1,
-                                    },
-                                    '95%': {
-                                        scale: 1.2,
-                                    },
-                                    '100%': {
-                                        scale: 1,
-                                    },
-                                },
-                            }),
-                        }} />
-                    </IconButton>
-                </span>
-            </Tooltip>
-        }
-        
-    </Box>
+                }}
+                value={prompt}
+                placeholder={['Auto'].includes(chart.chartType) 
+                    ? (isChartAvailable ? "what do you want to visualize?" : " ✏️ what do you want to visualize?")
+                    : (isChartAvailable ? "formulate data" : " ✏️  formulate data")}
+                rows={1}
+            />
+            {trigger ? (
+                <div className="flex">
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="ml-0 text-amber-600 hover:text-amber-700"
+                                    onClick={() => { 
+                                        deriveNewData(trigger.instruction, 'formulate', trigger.resultTableId); 
+                                    }}
+                                >
+                                    <RefreshCw className="w-4 h-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p className="text-[11px]">formulate and override <TableIcon className="w-2.5 h-2.5 inline -mb-px" />{trigger.resultTableId}</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+            ) : (
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="ml-0 text-primary"
+                                onClick={() => { deriveNewData(prompt, 'formulate'); }}
+                            >
+                                <Factory className={cn(
+                                    "w-5 h-5",
+                                    !isChartAvailable && "animate-pulse"
+                                )} />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Formulate</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )}
+        </div>
+    );
 
     // Ideas display section - get ideas for current chart
     let ideasSection = currentChartIdeas.length > 0 ? (
-        <Box key='ideas-section'>
-            <Box sx={{
-                p: 0.5,
-                display: 'flex', 
-                flexWrap: 'wrap', 
-                gap: 0.75,
-            }}>
+        <div key='ideas-section'>
+            <div className="p-1 flex flex-wrap gap-1.5">
                 {currentChartIdeas.map((idea, index) => (
                     <IdeaChip
                         mini={true}
                         key={index}
                         idea={idea}
-                        theme={theme}
                         onClick={() => handleIdeaClick(idea.text)}
                     />
                 ))}
-                {isLoadingIdeas && thinkingBuffer && <ThinkingBufferEffect text={thinkingBuffer.slice(-40)} sx={{ width: '100%' }} />}
-            </Box>
-        </Box>
+                {isLoadingIdeas && thinkingBuffer && <ThinkingBufferEffect text={thinkingBuffer.slice(-40)} className="w-full" />}
+            </div>
+        </div>
     ) : null;
 
     // Mode toggle header component
     const ModeToggleHeader = () => (
-        <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: 1, 
-            padding: '4px 8px',
-            borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
-            backgroundColor: 'rgba(0, 0, 0, 0.02)'
-        }}>
-            <Typography 
-                sx={{ 
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    fontSize: 11, 
-                    cursor: 'pointer',
-                    padding: '2px 6px',
-                    borderRadius: 1,
-                    backgroundColor: ideateMode ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
-                    color: ideateMode ? 'primary.main' : 'text.secondary',
-                    fontWeight: ideateMode ? 500 : 400,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                        backgroundColor: ideateMode ? 'rgba(25, 118, 210, 0.12)' : 'rgba(0, 0, 0, 0.04)'
-                    }
-                }}
+        <div className="flex items-center gap-2 px-2 py-1 border-b border-black/[0.08] bg-black/[0.02]">
+            <span 
+                className={cn(
+                    "flex items-center gap-1 text-[11px] cursor-pointer px-1.5 py-0.5 rounded",
+                    "transition-all duration-200",
+                    ideateMode 
+                        ? "bg-primary/10 text-primary font-medium" 
+                        : "text-muted-foreground hover:bg-black/[0.04]"
+                )}
                 onClick={() => {
                     if (currentChartIdeas.length > 0) {
                         setIdeateMode(true);
@@ -1104,57 +1019,34 @@ export const EncodingShelfCard: FC<EncodingShelfCardProps> = function ({ chartId
                 }}
             >
                 {currentChartIdeas.length > 0 ? "Ideas" : "Get Ideas"}
-                <LightbulbOutlinedIcon 
-                    sx={{
-                        fontSize: 12, 
-                        animation: 'pulse 3s ease-in-out infinite',
-                        '@keyframes pulse': {
-                            '0%': {
-                            },
-                            '50%': {
-                                color: theme.palette.derived.main,
-                            },
-                            '100%': {
-                            }
-                        }
-                    }} 
-                />
-            </Typography>
-            <Typography 
-                sx={{ 
-                    fontSize: 11, 
-                    cursor: 'pointer',
-                    padding: '2px 6px',
-                    borderRadius: 1,
-                    backgroundColor: !ideateMode ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
-                    color: !ideateMode ? 'primary.main' : 'text.secondary',
-                    fontWeight: !ideateMode ? 500 : 400,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                        backgroundColor: !ideateMode ? 'rgba(25, 118, 210, 0.12)' : 'rgba(0, 0, 0, 0.04)'
-                    }
-                }}
+                <Lightbulb className="w-3 h-3 animate-pulse" />
+            </span>
+            <span 
+                className={cn(
+                    "text-[11px] cursor-pointer px-1.5 py-0.5 rounded",
+                    "transition-all duration-200",
+                    !ideateMode 
+                        ? "bg-primary/10 text-primary font-medium" 
+                        : "text-muted-foreground hover:bg-black/[0.04]"
+                )}
                 onClick={() => setIdeateMode(false)}
             >
                 Editor
-            </Typography>
-            <Box sx={{ flex: 1 }} />
-            <IconButton
-                size="small"
+            </span>
+            <div className="flex-1" />
+            <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setDevMessageOpen(true)}
-                sx={{ 
-                    width: 20,
-                    height: 20,
-                    fontSize: '10px'
-                }}
+                className="w-5 h-5"
             >
-                <BugReportIcon fontSize="inherit" />
-            </IconButton>
-        </Box>
+                <Bug className="w-2.5 h-2.5" />
+            </Button>
+        </div>
     );
 
     let channelComponent = (
-        <Box sx={{ width: "100%", minWidth: "210px", height: '100%', display: "flex", flexDirection: "column" }}>
+        <div className="w-full min-w-[210px] h-full flex flex-col">
             {existMultiplePossibleBaseTables && <UserActionTableSelector 
                 requiredActionTableIds={requiredActionTables.map(t => t.id)}
                 userSelectedActionTableIds={userSelectedActionTableIds}
@@ -1162,198 +1054,135 @@ export const EncodingShelfCard: FC<EncodingShelfCardProps> = function ({ chartId
                 updateUserSelectedActionTableIds={handleUserSelectedActionTableChange}
                 requiredTableIds={requiredActionTables.map(t => t.id)}
             />}
-            <Box key='mark-selector-box' sx={{ flex: '0 0 auto' }}>
-                <FormControl sx={{ m: 1, minWidth: 120, width: "100%", margin: "0px 0"}} size="small">
-                    <Select
-                        variant="standard"
-                        labelId="chart-mark-select-label"
-                        id="chart-mark-select"
-                        value={chart.chartType}
-                        // Add these props to control the open state
-                        open={chartTypeMenuOpen}
-                        onOpen={() => setChartTypeMenuOpen(true)}
-                        onClose={() => setChartTypeMenuOpen(false)}
-                        MenuProps={{
-                            anchorOrigin: {
-                                vertical: 'bottom',
-                                horizontal: 'left',
-                            },
-                            transformOrigin: {
-                                vertical: 'top',
-                                horizontal: 'left',
-                            },
-                            PaperProps: {
-                                sx: {
-                                    '& .MuiList-root': {
-                                        display: 'grid',
-                                        gridTemplateColumns: '1fr 1fr',
-                                        gap: 0,
-                                        padding: '8px'
-                                    }
-                                }
-                            }
-                        }}
-                        renderValue={(value: string) => {
-                            const t = getChartTemplate(value);
-                            return (
-                                <div style={{display: 'flex', padding: "0px 0px 0px 4px"}}>
-                                    <ListItemIcon sx={{minWidth: "24px"}}>
-                                        {typeof t?.icon == 'string' ? <img height="24px" width="24px" src={t?.icon} alt="" role="presentation" /> : 
-                                         <Box sx={{width: "24px", height: "24px"}}>{t?.icon}</Box>}
-                                        </ListItemIcon>
-                                    <ListItemText sx={{marginLeft: "2px", whiteSpace: "initial"}} slotProps={{primary: {fontSize: 12}}}>{t?.chart}</ListItemText>
-                                </div>
-                            )
-                        }}
-                        onChange={(event) => { }}>
-                        {Object.entries(CHART_TEMPLATES).map(([group, templates]) => {
-                            return [
-                                <ListSubheader sx={{ 
-                                    color: "text.secondary", 
-                                    lineHeight: 2, 
-                                    fontSize: 12,
-                                    gridColumn: '1 / -1' // Make subheader span both columns
-                                }} key={group}>{group}</ListSubheader>,
-                                ...templates.map((t, i) => (
-                                    <MenuItem 
-                                        sx={{ 
-                                            fontSize: 12, 
-                                            paddingLeft: 2, 
-                                            paddingRight: 2,
-                                            minHeight: '32px',
-                                            margin: '1px 0'
-                                        }} 
-                                        value={t.chart} 
+            <div key='mark-selector-box' className="flex-none">
+                <Select
+                    value={chart.chartType}
+                    onValueChange={(value) => handleUpdateChartType(value)}
+                >
+                    <SelectTrigger className="w-full text-xs h-8">
+                        <SelectValue>
+                            {(() => {
+                                const t = getChartTemplate(chart.chartType);
+                                return (
+                                    <div className="flex items-center px-1">
+                                        <div className="min-w-[24px]">
+                                            {typeof t?.icon == 'string' ? 
+                                                <img height="24px" width="24px" src={t?.icon} alt="" role="presentation" /> : 
+                                                <div className="w-6 h-6">{t?.icon}</div>
+                                            }
+                                        </div>
+                                        <span className="ml-0.5 text-xs whitespace-normal">{t?.chart}</span>
+                                    </div>
+                                );
+                            })()}
+                        </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[400px]">
+                        {Object.entries(CHART_TEMPLATES).map(([group, templates]) => (
+                            <SelectGroup key={group}>
+                                <SelectLabel className="text-muted-foreground text-xs">{group}</SelectLabel>
+                                {templates.map((t, i) => (
+                                    <SelectItem 
                                         key={`${group}-${i}`}
-                                        onClick={(e) => {
-                                            console.log('MenuItem clicked:', t.chart);
-                                            // Manually trigger the chart type update (this will also close the menu)
-                                            handleUpdateChartType(t.chart);
-                                        }}
+                                        value={t.chart}
+                                        className="text-xs pl-2 pr-2 min-h-[32px] my-px"
                                     >
-                                        <Box sx={{display: 'flex'}}>
-                                            <ListItemIcon sx={{minWidth: "20px"}}>
+                                        <div className="flex items-center">
+                                            <div className="min-w-[20px]">
                                                 {typeof t?.icon == 'string' ? 
                                                     <img height="20px" width="20px" src={t?.icon} alt="" role="presentation" /> : 
-                                                    <Box sx={{width: "20px", height: "20px"}}>{t?.icon}</Box>
+                                                    <div className="w-5 h-5">{t?.icon}</div>
                                                 }
-                                            </ListItemIcon>
-                                            <ListItemText 
-                                                slotProps={{primary: {fontSize: 11}}} 
-                                                sx={{ margin: 0 }}
-                                            >
-                                                {t.chart}
-                                            </ListItemText>
-                                        </Box>
-                                    </MenuItem>
-                                ))
-                            ]
-                        })}
-                    </Select>
-                </FormControl>
-            </Box>
-            <Box key='encoding-groups' sx={{ flex: '1 1 auto' }} style={{ height: "calc(100% - 100px)" }} className="encoding-list">
+                                            </div>
+                                            <span className="text-[11px] m-0">{t.chart}</span>
+                                        </div>
+                                    </SelectItem>
+                                ))}
+                            </SelectGroup>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div key='encoding-groups' className="flex-1 h-[calc(100%-100px)] encoding-list">
                 {encodingBoxGroups}
-            </Box>
+            </div>
             {formulateInputBox}
-        </Box>);
+        </div>
+    );
 
     const encodingShelfCard = (
         <>
-            <Card variant='outlined' sx={{ 
-                padding: 0, 
-                maxWidth: "400px", 
-                display: 'flex', 
-                flexDirection: 'column', 
-                backgroundColor: trigger ? "rgba(255, 160, 122, 0.07)" : "" 
-            }}>
-            <ModeToggleHeader />
-            {ideateMode ? (
-                <Box sx={{ padding: 1 }}>
-                    <Tooltip title={`get ideas for visualization`}>
-                        <span>
-                            <Button 
-                                variant="text"
-                                disabled={isLoadingIdeas} 
-                                color={"primary"} 
-                                size="small"
-                                onClick={() => { getIdeasForVisualization(); }}
-                                startIcon={isLoadingIdeas ? undefined : <LightbulbOutlinedIcon sx={{fontSize: 10}} />}
-                                sx={{
-                                    fontSize: 12,
-                                    textTransform: 'none',
-                                }}
-                            >
-                                {isLoadingIdeas ? ThinkingBanner('ideating...') : currentChartIdeas.length > 0 ? "Different ideas?" : "Get Ideas?"} 
-                            </Button>
-                        </span>
-                    </Tooltip>
-                    {ideasSection}
-                </Box>
-            ) : (
-                <Box sx={{ padding: 1 }}>
-                    {channelComponent}
-                </Box>
-            )}
-        </Card>
-        <Dialog
-            open={devMessageOpen}
-            onClose={() => setDevMessageOpen(false)}
-            maxWidth="sm"
-            fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: 2,
-                    boxShadow: theme.shadows[10],
-                }
-            }}
-        >
-            <DialogTitle sx={{ 
-                pb: 1,
-                fontWeight: 600,
-                fontSize: '1.25rem',
-                color: theme.palette.primary.main
-            }}>
-                👋 Hello from the developers!
-            </DialogTitle>
-            <DialogContent>
-                <Typography variant="body1" sx={{ mb: 2 }}>
-                    How did you find this? We're glad you're exploring!
-                    <br />
-                    Drop us a message at{' '}
-                    <Typography
-                        component="a"
-                        href="https://github.com/microsoft/data-formulator"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        sx={{
-                            fontSize: 'inherit',
-                            color: theme.palette.primary.main,
-                            textDecoration: 'none',
-                            fontWeight: 500,
-                            '&:hover': {
-                                textDecoration: 'underline',
-                            }
-                        }}
-                    >
-                        github.com/microsoft/data-formulator
-                    </Typography>
-                    {' '}if you have any questions or feedback.
-                </Typography>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, pb: 2 }}>
-                <Button 
-                    onClick={() => setDevMessageOpen(false)}
-                    variant="contained"
-                    sx={{
-                        textTransform: 'none',
-                        borderRadius: 1.5,
-                    }}
-                >
-                    Got it!
-                </Button>
-            </DialogActions>
-        </Dialog>
+            <Card className={cn(
+                "p-0 max-w-[400px] flex flex-col border",
+                trigger && "bg-[rgba(255,160,122,0.07)]"
+            )}>
+                <ModeToggleHeader />
+                {ideateMode ? (
+                    <div className="p-2">
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button 
+                                        variant="ghost"
+                                        disabled={isLoadingIdeas} 
+                                        size="sm"
+                                        onClick={() => { getIdeasForVisualization(); }}
+                                        className="text-xs normal-case"
+                                    >
+                                        {isLoadingIdeas ? (
+                                            ThinkingBanner('ideating...')
+                                        ) : (
+                                            <>
+                                                <Lightbulb className="w-2.5 h-2.5 mr-1" />
+                                                {currentChartIdeas.length > 0 ? "Different ideas?" : "Get Ideas?"}
+                                            </>
+                                        )}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>get ideas for visualization</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        {ideasSection}
+                    </div>
+                ) : (
+                    <div className="p-2">
+                        {channelComponent}
+                    </div>
+                )}
+            </Card>
+            <Dialog open={devMessageOpen} onOpenChange={setDevMessageOpen}>
+                <DialogContent className="sm:max-w-md rounded-lg shadow-lg">
+                    <DialogHeader>
+                        <DialogTitle className="pb-1 font-semibold text-xl text-primary">
+                            👋 Hello from the developers!
+                        </DialogTitle>
+                    </DialogHeader>
+                    <DialogDescription className="mb-4">
+                        How did you find this? We're glad you're exploring!
+                        <br />
+                        Drop us a message at{' '}
+                        <a
+                            href="https://github.com/microsoft/data-formulator"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary font-medium no-underline hover:underline"
+                        >
+                            github.com/microsoft/data-formulator
+                        </a>
+                        {' '}if you have any questions or feedback.
+                    </DialogDescription>
+                    <DialogFooter className="px-3 pb-2">
+                        <Button 
+                            onClick={() => setDevMessageOpen(false)}
+                            className="normal-case rounded-md"
+                        >
+                            Got it!
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 

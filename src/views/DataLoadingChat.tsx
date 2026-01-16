@@ -4,9 +4,7 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Box, Divider, Tooltip, CircularProgress, Typography } from '@mui/material';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import CloseIcon from '@mui/icons-material/Close';
+import { cn } from '@/lib/utils';
 
 // shadcn/ui components
 import { Button } from '@/components/ui/button';
@@ -18,6 +16,7 @@ import {
     DialogDescription
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { RotateCcw, X, FileUp, ImagePlus, Loader2 } from 'lucide-react';
 
 import { useDispatch, useSelector } from 'react-redux';
@@ -101,9 +100,9 @@ export const DataLoadingChat: React.FC = () => {
     };
 
     if (!existOutputBlocks && !streamingContent) {
-        return <Box sx={{ width: 'calc(100% - 32px)', borderRadius: 2, px: 2 }}>
+        return <div className="w-[calc(100%-32px)] rounded-lg px-4">
             <DataLoadingInputBox maxLines={24} onStreamingContentUpdate={setStreamingContent} abortControllerRef={abortControllerRef} />
-        </Box>
+        </div>
     }
 
     const thinkingBanner = (
@@ -117,98 +116,53 @@ export const DataLoadingChat: React.FC = () => {
 
     
     let chatCard = (
-        <Box sx={{ width: (existOutputBlocks || streamingContent) ? '960px' : '640px', minHeight: 400,
-                display: 'flex', flexDirection: 'row', borderRadius: 2 }}>
+        <div className={cn(
+            "min-h-[400px] flex flex-row rounded-lg",
+            (existOutputBlocks || streamingContent) ? "w-[960px]" : "w-[640px]"
+        )}>
             
             {/* Left: Chat panel */}
-            <Box
-                sx={{
-                    width: 240,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    padding: 1,
-                    position: 'relative'
-                }}
-            >
-                <Box sx={{ flex: 1,  display: 'flex', flexDirection: 'column', minHeight: '480px', 
-                    overflowY: 'auto', overflowX: 'hidden' }}>
+            <div className="w-60 flex flex-col p-2 relative">
+                <div className="flex-1 flex flex-col min-h-[480px] overflow-y-auto overflow-x-hidden">
                     {threadsComponent}
-                </Box>
+                </div>
                 <DataLoadingInputBox ref={inputBoxRef} maxLines={4} onStreamingContentUpdate={setStreamingContent} abortControllerRef={abortControllerRef} />
-            </Box>
+            </div>
 
-            <Divider orientation="vertical" flexItem sx={{m: 2, color: 'divider'}} />
+            <Separator orientation="vertical" className="mx-4 h-auto" />
 
             {streamingContent && (
-                <Box
-                    sx={{
-                        flex: 1.4,
-                        minWidth: 480,
-                        maxWidth: 640,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        padding: 1
-                    }}
-                >
+                <div className="flex-[1.4] min-w-[480px] max-w-[640px] flex flex-col p-2">
                     {thinkingBanner}
-                    <Typography variant="body2" color="text.secondary" 
-                        sx={{ mt: 4, fontSize: '11px', whiteSpace: 'pre-wrap', overflow: 'clip', maxHeight: '600px', overflowY: 'auto' }}>
+                    <p className="mt-8 text-xs text-muted-foreground whitespace-pre-wrap overflow-clip max-h-[600px] overflow-y-auto">
                         {streamingContent.trim()}
-                    </Typography>
-                </Box>
+                    </p>
+                </div>
             )}
 
             {/* Right: Data preview panel */}
             {(existOutputBlocks && !streamingContent) && (
-                <Box
-                    sx={{
-                        flex: 1.4,
-                        minWidth: 480,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        padding: 1
-                    }}
-                >
+                <div className="flex-[1.4] min-w-[480px] flex flex-col p-2">
                     
-                    <Typography 
-                        sx={{ 
-                            fontSize: 14, 
-                            marginBottom: 1,
-                            fontWeight: 500,
-                            color: 'text.primary',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 0.5
-                        }}
-                        gutterBottom
-                    >
+                    <p className="text-sm mb-2 font-medium text-foreground flex items-center gap-1">
                         {selectedTable && (
-                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                            <span className="text-xs text-muted-foreground">
                                 {selectedTable?.name}
-                            </Typography>
+                            </span>
                         )}
-                    </Typography>
+                    </p>
                     
-                    <Box 
-                        sx={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            flex: 1,
-                            gap: 1,
-                            overflow: 'hidden'
-                        }}
-                    >
+                    <div className="flex flex-col flex-1 gap-2 overflow-hidden">
                         {selectedTable ? (
                             <DataPreviewBox />
                         ) : (
-                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', mt: 4, fontSize: '11px' }}>
+                            <p className="text-xs text-muted-foreground text-center mt-8">
                                 No data available
-                            </Typography>
+                            </p>
                         )}
 
                         {/* Bottom submit bar */}
-                        <Box sx={{ mt: 'auto', pt: 1, display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, 
-                            '& .MuiButton-root': { textTransform: 'none' } }}>
+                        <div className="mt-auto pt-2 flex flex-row items-center gap-2">
                             <Button
                                 variant="default"
                                 onClick={() => {
@@ -230,11 +184,11 @@ export const DataLoadingChat: React.FC = () => {
                             >
                                 Load table
                             </Button>
-                        </Box>
-                    </Box>
-                </Box>
+                        </div>
+                    </div>
+                </div>
             )}
-        </Box>
+        </div>
     );
 
     return chatCard;

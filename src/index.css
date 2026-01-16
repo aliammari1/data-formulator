@@ -1,8 +1,4 @@
 @import "tailwindcss";
-@import '@fontsource/roboto/300.css';
-@import '@fontsource/roboto/400.css';
-@import '@fontsource/roboto/500.css';
-@import '@fontsource/roboto/700.css';
 @import "tw-animate-css";
 
 /* ========================================
@@ -746,7 +742,6 @@ body {
     color: #a3a3a3;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
-
 
 .df-data-table td {
     padding: 0.75rem 1rem;

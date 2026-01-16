@@ -3,11 +3,7 @@
 
 import React from 'react';
 
-import {
-    Box,
-    Button,
-    Typography,
-} from '@mui/material';
+import { Button } from '@/components/ui/button';
 
 import embed from 'vega-embed';
 
@@ -71,19 +67,19 @@ export default class TestPanel extends React.Component<TestPanelProps, TestPanel
 
     public render = () => {
         return (
-            <Box className="visualization-container">
-                <Typography variant="subtitle1" component="h2">
+            <div className="visualization-container">
+                <h2 className="text-base font-medium">
                     TestPanel
-                </Typography>
-                <Button variant="contained" onClick={()=>{this.testStreamingChart()}}>Contained</Button>
-                <Box className="vega-container">
+                </h2>
+                <Button variant="default" onClick={()=>{this.testStreamingChart()}}>Contained</Button>
+                <div className="vega-container">
                     {this.state.vgSpecs.map((spec: any, index: any) => {
                         const id = `chart-element-${index}`;
                         const element = <div id={id} key={`chart-${index}`}></div>;
                         embed('#' + id, spec);
                         return element;
                     })}
-                </Box>
-            </Box>);
+                </div>
+            </div>);
     };
 }

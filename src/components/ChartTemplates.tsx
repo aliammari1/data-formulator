@@ -2,9 +2,7 @@
 // Licensed under the MIT License.
 
 import { ChartTemplate } from "./ComponentType";
-import InsightsIcon from '@mui/icons-material/Insights';
-import PublicIcon from '@mui/icons-material/Public';
-import PieChartOutlineIcon from '@mui/icons-material/PieChartOutline';
+import { TrendingUp, Globe, PieChart } from 'lucide-react';
 import React from "react";
 
 // Import all chart icons statically so they are included in the build
@@ -56,7 +54,7 @@ export const ChannelGroups = {
 const tablePlots: ChartTemplate[] = [
     {
         "chart": "Auto",
-        "icon": <InsightsIcon color="primary" />,
+        "icon": <TrendingUp className="h-full w-full text-primary" />,
         "template": { },
         "channels": [],
         "paths": { }

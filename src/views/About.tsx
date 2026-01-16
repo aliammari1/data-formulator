@@ -1,18 +1,34 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { Box, Typography, Button, useTheme, alpha, IconButton, Divider } from "@mui/material";
 import React, { FC, useState, useEffect, useRef } from "react";
-import ArrowBackIosNewIcon from '@mui/icons-material/ArrowBackIosNew';
-import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
-import GridViewIcon from '@mui/icons-material/GridView';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import YouTubeIcon from '@mui/icons-material/YouTube';
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
+import { useSelector } from "react-redux";
+
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
+
+import { 
+    ChevronLeft, 
+    ChevronRight, 
+    Github, 
+    Youtube, 
+    Bot, 
+    Sparkles, 
+    Database, 
+    LineChart,
+    MessageSquare,
+    Play,
+    ArrowRight,
+    Zap,
+    Shield,
+    Code
+} from 'lucide-react';
 
 import dfLogo from '../assets/df-logo.png';
 import { toolName } from "../app/App";
-import { useSelector } from "react-redux";
 import { DataFormulatorState } from "../app/dfSlice";
 
 
@@ -21,32 +37,37 @@ interface Feature {
     description: string;
     media: string;
     mediaType: 'image' | 'video';
+    icon: React.ReactNode;
 }
 
 const features: Feature[] = [
     {
-        title: "Load (Almost) Any Data",
-        description: "Load structured data, connect to databases. Ask AI agents to extract and clean (small) ad-hoc data from screenshots, text blocks.",
+        title: "Load Any Data",
+        description: "Load structured data, connect to databases, or let AI extract and clean data from screenshots and text.",
         media: "/feature-extract-data.mp4",
-        mediaType: "video"
+        mediaType: "video",
+        icon: <Database className="h-6 w-6" />
     },
     {
         title: "Agent Mode",
-        description: "Vibe with your data. Hands-off and let agents automatically explore and visualize data from high-level goals.",
+        description: "Hands-off exploration. Let AI agents automatically discover insights and create visualizations.",
         media: "/feature-agent-mode.mp4",
-        mediaType: "video"
+        mediaType: "video",
+        icon: <Bot className="h-6 w-6" />
     },
     {
         title: "Interactive Control",
-        description: "Use UI interactions and natural language to precisely describe chart designs. Ask AI agents for recommendations. Use Data Threads to backtrack, explore new branches, or follow up.",
+        description: "Use natural language and UI interactions to precisely design charts. Backtrack and explore branches.",
         media: "/feature-interactive-control.mp4",
-        mediaType: "video"
+        mediaType: "video",
+        icon: <MessageSquare className="h-6 w-6" />
     },
     {
-        title: "Verify & Share Insights",
-        description: "Interact with charts, inspect data, formulas, and code. Create reports to share insights grounded in your exploration.",
+        title: "Verify & Share",
+        description: "Inspect data, formulas, and code. Create shareable reports grounded in your exploration.",
         media: "/feature-generate-report.mp4",
-        mediaType: "video"
+        mediaType: "video",
+        icon: <LineChart className="h-6 w-6" />
     }
 ];
 
@@ -58,12 +79,18 @@ const screenshots: {url: string, description: string}[] = [
     {url: '/screenshot-claude-performance.webp', description: 'Compare Claude models\' performance on different tasks'},
 ];
 
+const benefits = [
+    { icon: <Zap className="h-5 w-5" />, title: "Lightning Fast", description: "Go from data to insights in seconds" },
+    { icon: <Shield className="h-5 w-5" />, title: "Privacy First", description: "Your data stays in your browser" },
+    { icon: <Code className="h-5 w-5" />, title: "Open Source", description: "MIT licensed, fully customizable" },
+];
+
 export const About: FC<{}> = function About({ }) {
-    const theme = useTheme();
     const [currentFeature, setCurrentFeature] = useState(0);
     const [currentScreenshot, setCurrentScreenshot] = useState(0);
     const videoRef = useRef<HTMLVideoElement | null>(null);
     const videoDurationsRef = useRef<Map<string, number>>(new Map());
+    const [isHovering, setIsHovering] = useState(false);
 
     const handlePrevious = () => {
         setCurrentFeature((prev) => (prev === 0 ? features.length - 1 : prev - 1));
@@ -73,18 +100,17 @@ export const About: FC<{}> = function About({ }) {
         setCurrentFeature((prev) => (prev === features.length - 1 ? 0 : prev + 1));
     };
 
-    // Auto-advance features based on video duration
+    // Auto-advance features based on video duration (pause on hover)
     useEffect(() => {
+        if (isHovering) return;
+        
         const currentMedia = features[currentFeature].media;
         const isVideo = features[currentFeature].mediaType === 'video';
         
-        // Default duration for images or if video duration is not yet loaded
-        let duration = 10000; // 10 seconds for images
+        let duration = 10000;
         
         if (isVideo && videoDurationsRef.current.has(currentMedia)) {
-            // Use the stored video duration (in milliseconds)
-            duration = videoDurationsRef.current.get(currentMedia)! * 1000;
-            duration = duration + 3000; // add 3 seconds to the video duration
+            duration = videoDurationsRef.current.get(currentMedia)! * 1000 + 3000;
         }
 
         const timeoutId = setTimeout(() => {
@@ -92,9 +118,17 @@ export const About: FC<{}> = function About({ }) {
         }, duration);
 
         return () => clearTimeout(timeoutId);
-    }, [currentFeature]);
+    }, [currentFeature, isHovering]);
 
-    // Preload adjacent carousel items for smoother transitions
+    // Auto-advance screenshots
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setCurrentScreenshot((prev) => (prev + 1) % screenshots.length);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // Preload adjacent carousel items
     useEffect(() => {
         const preloadMedia = (index: number) => {
             const feature = features[index];
@@ -108,390 +142,363 @@ export const About: FC<{}> = function About({ }) {
             }
         };
 
-        // Preload next and previous features
         const nextIndex = (currentFeature + 1) % features.length;
         const prevIndex = currentFeature === 0 ? features.length - 1 : currentFeature - 1;
         
         preloadMedia(nextIndex);
         preloadMedia(prevIndex);
 
-        // Preload next and previous screenshots
         const nextScreenshot = (currentScreenshot + 1) % screenshots.length;
-        const prevScreenshot = currentScreenshot === 0 ? screenshots.length - 1 : currentScreenshot - 1;
-        
-        const img1 = new Image();
-        img1.src = screenshots[nextScreenshot].url;
-        const img2 = new Image();
-        img2.src = screenshots[prevScreenshot].url;
+        const img = new Image();
+        img.src = screenshots[nextScreenshot].url;
     }, [currentFeature, currentScreenshot]);
 
     const serverConfig = useSelector((state: DataFormulatorState) => state.serverConfig);
 
-    let actionButtons = !serverConfig.PROJECT_FRONT_PAGE ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, mb: 4, flexWrap: 'wrap' }}>
-            <Button size="large" variant="contained" color="primary" 
-                startIcon={<PrecisionManufacturingIcon sx={{ fontSize: '1rem' }} />}
-                href="/app"
-            >Start Exploration</Button>
-        </Box>
-    ) : (
-        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, mb: 4, flexWrap: 'wrap', '.MuiButton-root': { textTransform: 'none' } }}>
-            <Button size="large" variant="outlined" color="primary" 
-                startIcon={<YouTubeIcon sx={{ fontSize: '1rem', color: '#FF0000' }} />}
-                target="_blank"
-                rel="noopener noreferrer"
-                href="https://www.youtube.com/watch?v=GfTE2FLyMrs"
-            >What's New in v0.5?</Button>
-            <Button size="large" variant="outlined" color="primary" 
-                startIcon={<GitHubIcon sx={{ fontSize: '1rem', color: '#000000' }} />}
-                target="_blank"
-                rel="noopener noreferrer"
-                href="https://github.com/microsoft/data-formulator"
-            >GitHub</Button>
-            <Divider orientation="vertical" sx={{ mx: 1 }} flexItem />
-            <Button size="large" variant="outlined" color="primary" 
-                startIcon={<Box component="img" sx={{ width: 24, height: 24 }} alt="" src="/pip-logo.svg" />}
-                target="_blank"
-                rel="noopener noreferrer"
-                href="https://pypi.org/project/data-formulator/"
-            >Install Locally</Button>
-            <Button size="large" variant="outlined" color="primary" 
-                sx={{
-                    animation: 'subtleGlow 2s ease-in-out infinite',
-                    '@keyframes subtleGlow': {
-                        '0%, 100%': {
-                            boxShadow: `0 0 8px ${alpha(theme.palette.primary.main, 0.4)}, 0 0 16px ${alpha(theme.palette.primary.main, 0.2)}`,
-                        },
-                        '50%': {
-                            boxShadow: `0 0 12px ${alpha(theme.palette.primary.main, 0.6)}, 0 0 24px ${alpha(theme.palette.primary.main, 0.3)}, 0 0 32px ${alpha(theme.palette.primary.main, 0.1)}`,
-                        }
-                    },
-                    '&:hover': {
-                        animation: 'subtleGlow 1.5s ease-in-out infinite',
-                        boxShadow: `0 0 16px ${alpha(theme.palette.primary.main, 0.7)}, 0 0 32px ${alpha(theme.palette.primary.main, 0.4)} !important`,
-                    }
-                }}
-                startIcon={<GridViewIcon sx={{ fontSize: '1rem' }} />}
-                href="/app"
-            >Try Online Demo</Button>
-            <Typography variant="caption" sx={{ mt: 1.5, color: 'text.secondary', fontStyle: 'italic' }}>
-                Psst — install locally for the full experience ✨. The online demo has limited features (at the moment).
-            </Typography>
-        </Box>
-    );
-
     return (
-        <Box sx={{
-            display: "flex", 
-            flexDirection: "column", 
-            textAlign: "center", 
-            overflowY: "auto",
-            width: '100%',
-            height: '100%',
-            background: `
-                linear-gradient(90deg, ${alpha(theme.palette.text.secondary, 0.01)} 1px, transparent 1px),
-                linear-gradient(0deg, ${alpha(theme.palette.text.secondary, 0.01)} 1px, transparent 1px)
-            `,
-            backgroundSize: '16px 16px',
-        }}>
-            <Box sx={{margin:'auto', pb: '5%', display: "flex", flexDirection: "column", textAlign: "center", maxWidth: 1200}}>
-                {/* Header with logo and title */}
-                <Box sx={{display: 'flex', mx: 'auto', mt: 4}}>
-                    <Typography fontSize={84} sx={{ml: 2, letterSpacing: '0.05em'}}>{toolName}</Typography> 
-                </Box>
-                <Typography sx={{ 
-                    fontSize: 24, color: theme.palette.text.secondary, 
-                    textAlign: 'center', mb: 4}}>
-                    Explore data with visualizations, powered by AI agents. 
-                </Typography>
-                
-                {actionButtons}
+        <div className="flex flex-col h-full overflow-y-auto bg-gradient-to-br from-background via-background to-primary/5">
+            {/* Hero Section */}
+            <section className="relative px-6 py-20 lg:py-32 overflow-hidden">
+                {/* Animated background elements */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse" />
+                    <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-primary/5 to-transparent rounded-full blur-3xl" />
+                </div>
 
-                {/* Interactive Features Carousel */}
-                <Box sx={{
-                    mx: 'auto',
-                    maxWidth: 1200,
-                    borderRadius: 3, 
-                    position: 'relative',
-                }}>
-                    <Box sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: 3,
-                        height: '40vh',
-                        minHeight: 320,
-                    }}>
-                        {/* Left Arrow */}
-                        <IconButton 
-                            onClick={handlePrevious}
-                            sx={{ 
-                                flexShrink: 0,
-                                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                '&:hover': {
-                                    bgcolor: alpha(theme.palette.primary.main, 0.2),
-                                }
-                            }}
-                        >
-                            <ArrowBackIosNewIcon />
-                        </IconButton>
+                <div className="relative max-w-6xl mx-auto text-center">
+                    {/* Badge */}
+                    <Badge variant="secondary" className="mb-6 px-4 py-1.5 text-sm font-medium">
+                        <Sparkles className="h-3.5 w-3.5 mr-2" />
+                        Powered by AI Agents
+                    </Badge>
 
-                        {/* Feature Content */}
-                        <Box sx={{ 
-                            flex: 1, 
-                            display: 'flex', 
-                            flexDirection: 'row',
-                            gap: 4,
-                            alignItems: 'center',
-                        }}>
-                            {/* Text Content */}
-                            <Box sx={{ 
-                                flex: 1,
-                                textAlign: 'left',
-                                minWidth: 300,
-                            }}>
-                                <Typography 
-                                    variant="h4" 
-                                    sx={{ mb: 2 }}
-                                >
-                                    {features[currentFeature].title}
-                                </Typography>
-                                <Typography 
-                                    variant="body1" 
-                                    sx={{ color: 'text.secondary', lineHeight: 1.8 }}
-                                >
-                                    {features[currentFeature].description}
-                                </Typography>
-                                
-                                {/* Feature Indicators */}
-                                <Box sx={{ display: 'flex', gap: 1, mt: 3 }}>
-                                    {features.map((_, index) => (
-                                        <Box
-                                            key={index}
-                                            onClick={() => setCurrentFeature(index)}
-                                            sx={{
-                                                width: 32,
-                                                height: 4,
-                                                borderRadius: 2,
-                                                bgcolor: index === currentFeature 
-                                                    ? theme.palette.primary.main 
-                                                    : alpha(theme.palette.text.secondary, 0.2),
-                                                cursor: 'pointer',
-                                                '&:hover': {
-                                                    bgcolor: index === currentFeature 
-                                                        ? theme.palette.primary.main 
-                                                        : alpha(theme.palette.text.secondary, 0.4),
-                                                }
-                                            }}
-                                        />
-                                    ))}
-                                </Box>
-                            </Box>
+                    {/* Main heading */}
+                    <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text">
+                        {toolName}
+                    </h1>
 
-                            {/* Media Content */}
-                            <Box sx={{ 
-                                flex: 1,
-                                borderRadius: 2,
-                                overflow: 'hidden',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                minWidth: 300,
-                                maxWidth: 500,
-                            }}>
-                                {features[currentFeature].mediaType === 'video' ? (
-                                    <Box
-                                        component="video"
-                                        key={features[currentFeature].media}
-                                        src={features[currentFeature].media}
-                                        ref={videoRef}
-                                        autoPlay
-                                        loop
-                                        muted
-                                        playsInline
-                                        preload="metadata"
-                                        onLoadedMetadata={(e) => {
-                                            const video = e.currentTarget as HTMLVideoElement;
-                                            if (video.duration && !isNaN(video.duration)) {
-                                                videoDurationsRef.current.set(
-                                                    features[currentFeature].media,
-                                                    video.duration
-                                                );
-                                            }
-                                        }}
-                                        sx={{
-                                            width: '100%',
-                                            height: 'auto',
-                                            display: 'block',
-                                        }}
-                                    />
-                                ) : (
-                                    <Box
-                                        component="img"
-                                        src={features[currentFeature].media}
-                                        alt={features[currentFeature].title}
-                                        loading="lazy"
-                                        sx={{
-                                            width: '100%',
-                                            height: 'auto',
-                                            display: 'block',
-                                        }}
-                                    />
+                    {/* Subtitle */}
+                    <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+                        Transform your data into stunning visualizations with AI-powered exploration and natural language interactions.
+                    </p>
+
+                    {/* CTA Buttons */}
+                    {!serverConfig.PROJECT_FRONT_PAGE ? (
+                        <div className="flex justify-center gap-4 mb-8">
+                            <Button size="lg" className="gap-2 text-base px-8 shadow-lg hover:shadow-xl transition-all" asChild>
+                                <a href="/app">
+                                    <Bot className="h-5 w-5" />
+                                    Start Exploring
+                                    <ArrowRight className="h-4 w-4 ml-1" />
+                                </a>
+                            </Button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="flex flex-wrap justify-center gap-4">
+                                <Button size="lg" className="gap-2 text-base px-8 shadow-lg hover:shadow-xl transition-all bg-gradient-to-r from-primary to-primary/80" asChild>
+                                    <a href="/app">
+                                        <Play className="h-4 w-4" />
+                                        Try Online Demo
+                                    </a>
+                                </Button>
+                                <Button size="lg" variant="outline" className="gap-2 text-base px-6" asChild>
+                                    <a href="https://pypi.org/project/data-formulator/" target="_blank" rel="noopener noreferrer">
+                                        <img src="/pip-logo.svg" alt="" className="w-5 h-5" />
+                                        Install Locally
+                                    </a>
+                                </Button>
+                            </div>
+                            <div className="flex gap-3 mt-2">
+                                <Button size="sm" variant="ghost" className="gap-2 text-muted-foreground" asChild>
+                                    <a href="https://github.com/microsoft/data-formulator" target="_blank" rel="noopener noreferrer">
+                                        <Github className="h-4 w-4" />
+                                        GitHub
+                                    </a>
+                                </Button>
+                                <Button size="sm" variant="ghost" className="gap-2 text-muted-foreground" asChild>
+                                    <a href="https://www.youtube.com/watch?v=GfTE2FLyMrs" target="_blank" rel="noopener noreferrer">
+                                        <Youtube className="h-4 w-4 text-red-500" />
+                                        What's New
+                                    </a>
+                                </Button>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-2">
+                                ✨ Install locally for the full experience
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* Benefits Strip */}
+            <section className="py-8 border-y border-border/50 bg-muted/30">
+                <div className="max-w-6xl mx-auto px-6">
+                    <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+                        {benefits.map((benefit, i) => (
+                            <div key={i} className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                                    {benefit.icon}
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-sm">{benefit.title}</p>
+                                    <p className="text-xs text-muted-foreground">{benefit.description}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Features Section */}
+            <section className="py-20 px-6">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4">Powerful Features</h2>
+                        <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+                            Everything you need to turn data into actionable insights
+                        </p>
+                    </div>
+
+                    {/* Feature Cards Grid */}
+                    <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+                        {features.map((feature, index) => (
+                            <Card 
+                                key={index}
+                                onClick={() => setCurrentFeature(index)}
+                                className={cn(
+                                    "cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1",
+                                    currentFeature === index 
+                                        ? "border-primary shadow-lg ring-2 ring-primary/20" 
+                                        : "hover:border-primary/50"
                                 )}
-                            </Box>
-                        </Box>
-
-                        {/* Right Arrow */}
-                        <IconButton 
-                            onClick={handleNext}
-                            sx={{ 
-                                flexShrink: 0,
-                                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                '&:hover': {
-                                    bgcolor: alpha(theme.palette.primary.main, 0.2),
-                                }
-                            }}
-                        >
-                            <ArrowForwardIosIcon />
-                        </IconButton>
-                    </Box>
-                </Box>
-                
-                {/* Screenshots Carousel Section */}
-                <Box sx={{ mt: 6, mx: 2 }}>
-                    <Box sx={{ 
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: 3
-                    }}>
-                        {/* Screenshot Container */}
-                        <Box 
-                            key={currentScreenshot}
-                            onClick={() => setCurrentScreenshot((currentScreenshot + 1) % screenshots.length)}
-                            sx={{
-                                height: 680,
-                                width: 'auto',
-                                borderRadius: 8,
-                                cursor: 'pointer',
-                                overflow: 'hidden',
-                                border: '1px solid rgba(0,0,0,0.1)',
-                                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                                position: 'relative',
-                                display: 'flex',
-                                justifyContent: 'center',
-                                textDecoration: 'none',
-                                animation: 'fadeSlideIn 0.1s ease-out',
-                                '&:hover': {
-                                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-                                    '& .description-overlay': {
-                                        opacity: 1,
-                                    }
-                                }
-                            }}
-                        >
-                            <Box 
-                                component="img" 
-                                sx={{
-                                    display: 'block',
-                                    clipPath: 'inset(2px 0 0 0)'
-                                }} 
-                                alt={screenshots[currentScreenshot].description} 
-                                src={screenshots[currentScreenshot].url}
-                                loading="lazy"
-                            />
-                            <Box
-                                className="description-overlay"
-                                sx={{
-                                    position: 'absolute',
-                                    bottom: 0,
-                                    left: 0,
-                                    right: 0,
-                                    backgroundColor: 'rgba(250, 250, 250, 0.6)',
-                                    backdropFilter: 'blur(8px)',
-                                    padding: 2,
-                                    opacity: 0,
-                                    transition: 'opacity 0.3s ease',
-                                }}
                             >
-                                <Typography 
-                                    variant="body1" 
-                                    color="text.secondary"
-                                    sx={{ 
-                                        fontSize: '2rem',
-                                        fontWeight: 400,
-                                        textAlign: 'center'
-                                    }}
-                                >
-                                    {screenshots[currentScreenshot].description}
-                                </Typography>
-                            </Box>
-                        </Box>
+                                <CardContent className="p-6">
+                                    <div className={cn(
+                                        "p-3 rounded-xl w-fit mb-4 transition-colors",
+                                        currentFeature === index 
+                                            ? "bg-primary text-primary-foreground" 
+                                            : "bg-primary/10 text-primary"
+                                    )}>
+                                        {feature.icon}
+                                    </div>
+                                    <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
+                                    <p className="text-sm text-muted-foreground line-clamp-2">
+                                        {feature.description}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
 
-                        {/* Screenshot Indicators */}
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            {screenshots.map((_, index) => (
-                                <Box
-                                    key={index}
-                                    onClick={() => setCurrentScreenshot(index)}
-                                    sx={{
-                                        width: 32,
-                                        height: 4,
-                                        borderRadius: 2,
-                                        bgcolor: index === currentScreenshot 
-                                            ? theme.palette.primary.main 
-                                            : alpha(theme.palette.text.secondary, 0.2),
-                                        cursor: 'pointer',
-                                        transition: 'all 0.3s ease',
-                                        '&:hover': {
-                                            bgcolor: index === currentScreenshot 
-                                                ? theme.palette.primary.main 
-                                                : alpha(theme.palette.text.secondary, 0.4),
+                    {/* Feature Demo */}
+                    <div 
+                        className="relative rounded-2xl overflow-hidden border shadow-2xl bg-gradient-to-br from-muted/50 to-background"
+                        onMouseEnter={() => setIsHovering(true)}
+                        onMouseLeave={() => setIsHovering(false)}
+                    >
+                        <div className="flex items-center gap-4 p-4 border-b bg-muted/50">
+                            <div className="flex gap-2">
+                                <div className="w-3 h-3 rounded-full bg-red-400" />
+                                <div className="w-3 h-3 rounded-full bg-yellow-400" />
+                                <div className="w-3 h-3 rounded-full bg-green-400" />
+                            </div>
+                            <span className="text-sm font-medium text-muted-foreground">
+                                {features[currentFeature].title}
+                            </span>
+                        </div>
+                        
+                        <div className="relative aspect-video">
+                            {/* Navigation Arrows */}
+                            <Button 
+                                variant="secondary"
+                                size="icon"
+                                onClick={handlePrevious}
+                                className="absolute left-4 top-1/2 -translate-y-1/2 z-10 opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity shadow-lg"
+                            >
+                                <ChevronLeft className="h-5 w-5" />
+                            </Button>
+                            <Button 
+                                variant="secondary"
+                                size="icon"
+                                onClick={handleNext}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 z-10 opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity shadow-lg"
+                            >
+                                <ChevronRight className="h-5 w-5" />
+                            </Button>
+
+                            {features[currentFeature].mediaType === 'video' ? (
+                                <video
+                                    key={features[currentFeature].media}
+                                    src={features[currentFeature].media}
+                                    ref={videoRef}
+                                    autoPlay
+                                    loop
+                                    muted
+                                    playsInline
+                                    preload="metadata"
+                                    onLoadedMetadata={(e) => {
+                                        const video = e.currentTarget as HTMLVideoElement;
+                                        if (video.duration && !isNaN(video.duration)) {
+                                            videoDurationsRef.current.set(
+                                                features[currentFeature].media,
+                                                video.duration
+                                            );
                                         }
                                     }}
+                                    className="w-full h-full object-cover"
+                                />
+                            ) : (
+                                <img
+                                    src={features[currentFeature].media}
+                                    alt={features[currentFeature].title}
+                                    loading="lazy"
+                                    className="w-full h-full object-cover"
+                                />
+                            )}
+                        </div>
+
+                        {/* Progress indicators */}
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                            {features.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setCurrentFeature(index)}
+                                    className={cn(
+                                        "w-8 h-1.5 rounded-full transition-all",
+                                        index === currentFeature 
+                                            ? "bg-white w-12" 
+                                            : "bg-white/40 hover:bg-white/60"
+                                    )}
                                 />
                             ))}
-                        </Box>
-                    </Box>
-                </Box>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-                <Box sx={{ mt: 6, mx: 2 }}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                        <Typography variant="caption">
-                            How does Data Formulator handle your data?
-                        </Typography>
-                        <Typography 
-                            variant="caption" 
-                            sx={{ mt: 1, textAlign: 'left' }}
+            {/* Screenshots Gallery */}
+            <section className="py-20 px-6 bg-muted/30">
+                <div className="max-w-6xl mx-auto">
+                    <div className="text-center mb-12">
+                        <h2 className="text-3xl md:text-4xl font-bold mb-4">See It In Action</h2>
+                        <p className="text-muted-foreground text-lg">
+                            Real examples of data exploration and visualization
+                        </p>
+                    </div>
+
+                    <div className="relative">
+                        <div 
+                            key={currentScreenshot}
+                            onClick={() => setCurrentScreenshot((currentScreenshot + 1) % screenshots.length)}
+                            className="cursor-pointer group"
                         >
-                            <li><strong>Data Storage:</strong> Uploaded data (csv, xlsx, json, clipboard, messy data etc.) is stored in browser's local storage only</li>
-                            <li><strong>Data Processing:</strong> Local installation runs Python on your machine; online demo sends the data to server for data transformations (but not stored)</li>
-                            <li><strong>Database:</strong> Only available for locally installed Data Formulator (a DuckDB database file is created in temp directory to store data); not available in online demo</li>
-                            <li><strong>LLM Endpoints:</strong> Small data samples are sent to LLM endpoints along with the prompt. Use your trusted model provider if working with private data.</li>
-                        </Typography>
-                        <Typography variant="caption" sx={{ mt: 4, color: 'text.secondary' }}>
-                            Research Prototype from Microsoft Research
-                        </Typography>
-                    </Box>
-                </Box>
-            </Box>
+                            <div className="rounded-2xl overflow-hidden shadow-2xl border transition-all duration-500 hover:shadow-3xl">
+                                <img 
+                                    className="w-full h-auto"
+                                    alt={screenshots[currentScreenshot].description} 
+                                    src={screenshots[currentScreenshot].url}
+                                    loading="lazy"
+                                />
+                            </div>
+                            <div className="mt-6 text-center">
+                                <p className="text-lg font-medium text-foreground/80">
+                                    {screenshots[currentScreenshot].description}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Screenshot Indicators */}
+                        <div className="flex justify-center gap-2 mt-8">
+                            {screenshots.map((_, index) => (
+                                <button
+                                    key={index}
+                                    onClick={() => setCurrentScreenshot(index)}
+                                    className={cn(
+                                        "w-2 h-2 rounded-full transition-all",
+                                        index === currentScreenshot 
+                                            ? "bg-primary w-8" 
+                                            : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                                    )}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {/* Data Privacy Section */}
+            <section className="py-16 px-6">
+                <div className="max-w-3xl mx-auto">
+                    <Card className="border-primary/20">
+                        <CardContent className="p-8">
+                            <div className="flex items-center gap-3 mb-6">
+                                <Shield className="h-6 w-6 text-primary" />
+                                <h3 className="text-xl font-semibold">Your Data, Your Control</h3>
+                            </div>
+                            <div className="grid sm:grid-cols-2 gap-4 text-sm text-muted-foreground">
+                                <div className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                                    <div>
+                                        <p className="font-medium text-foreground">Browser Storage</p>
+                                        <p>Data stays in your browser's local storage</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-2 flex-shrink-0" />
+                                    <div>
+                                        <p className="font-medium text-foreground">Local Processing</p>
+                                        <p>Python runs on your machine (local install)</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-2 flex-shrink-0" />
+                                    <div>
+                                        <p className="font-medium text-foreground">LLM Endpoints</p>
+                                        <p>Small samples sent for AI features only</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-2 flex-shrink-0" />
+                                    <div>
+                                        <p className="font-medium text-foreground">Open Source</p>
+                                        <p>MIT licensed, audit the code yourself</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+            </section>
 
             {/* Footer */}
-            <Box sx={{ color: 'text.secondary', display: 'flex', 
-                        backgroundColor: 'rgba(255, 255, 255, 0.89)',
-                        alignItems: 'center', justifyContent: 'center' }}>
-                <Button size="small" color="inherit" 
-                        sx={{ textTransform: 'none'}} 
-                        target="_blank" rel="noopener noreferrer" 
-                        href="https://www.microsoft.com/en-us/privacy/privacystatement">Privacy & Cookies</Button>
-                <Divider orientation="vertical" variant="middle" flexItem sx={{ mx: 1 }} />
-                <Button size="small" color="inherit" 
-                        sx={{ textTransform: 'none'}} 
-                        target="_blank" rel="noopener noreferrer" 
-                        href="https://www.microsoft.com/en-us/legal/intellectualproperty/copyright">Terms of Use</Button>
-                <Divider orientation="vertical" variant="middle" flexItem sx={{ mx: 1 }} />
-                <Button size="small" color="inherit" 
-                        sx={{ textTransform: 'none'}} 
-                        target="_blank" rel="noopener noreferrer" 
-                        href="https://github.com/microsoft/data-formulator/issues">Contact Us</Button>
-                <Typography sx={{ display: 'inline', fontSize: '12px', ml: 1 }}> @ {new Date().getFullYear()}</Typography>
-            </Box>
-        </Box>)
+            <footer className="mt-auto py-8 px-6 border-t bg-muted/30">
+                <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p className="text-sm text-muted-foreground">
+                        Research Prototype from Microsoft Research · © {new Date().getFullYear()}
+                    </p>
+                    <div className="flex items-center gap-4">
+                        <Button variant="link" size="sm" className="text-muted-foreground h-auto p-0" asChild>
+                            <a href="https://www.microsoft.com/en-us/privacy/privacystatement" target="_blank" rel="noopener noreferrer">
+                                Privacy
+                            </a>
+                        </Button>
+                        <Separator orientation="vertical" className="h-4" />
+                        <Button variant="link" size="sm" className="text-muted-foreground h-auto p-0" asChild>
+                            <a href="https://www.microsoft.com/en-us/legal/intellectualproperty/copyright" target="_blank" rel="noopener noreferrer">
+                                Terms
+                            </a>
+                        </Button>
+                        <Separator orientation="vertical" className="h-4" />
+                        <Button variant="link" size="sm" className="text-muted-foreground h-auto p-0" asChild>
+                            <a href="https://github.com/microsoft/data-formulator/issues" target="_blank" rel="noopener noreferrer">
+                                Contact
+                            </a>
+                        </Button>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    );
 }

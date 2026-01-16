@@ -4,24 +4,39 @@
 import * as React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Box, Button, Card, CardContent, Divider, IconButton, Paper, Stack, TextField, Typography, alpha, useTheme, Dialog, DialogTitle, DialogContent, Tooltip, LinearProgress, CircularProgress, Chip, SxProps, Theme } from '@mui/material';
-import UploadIcon from '@mui/icons-material/Upload';
-import SendIcon from '@mui/icons-material/Send';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import CancelIcon from '@mui/icons-material/Cancel';
-import PanoramaFishEyeIcon from '@mui/icons-material/PanoramaFishEye';
-import CloseIcon from '@mui/icons-material/Close';
-import CircleIcon from '@mui/icons-material/Circle';
-import TableIcon from '@mui/icons-material/TableChart';
-import LinkIcon from '@mui/icons-material/Link';
-import DeleteIcon from '@mui/icons-material/Delete';
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
-import SouthIcon from '@mui/icons-material/South';
-import LanguageIcon from '@mui/icons-material/Language';
-import ImageIcon from '@mui/icons-material/Image';
-import TextFieldsIcon from '@mui/icons-material/TextFields';
-import DatasetIcon from '@mui/icons-material/Dataset';
-import StopIcon from '@mui/icons-material/Stop';
+import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+    Upload,
+    Send,
+    RotateCcw,
+    XCircle,
+    Circle,
+    X,
+    Table2,
+    Link,
+    Trash2,
+    Bot,
+    ArrowDown,
+    Globe,
+    Image,
+    Type,
+    Database,
+    Square,
+    Loader2,
+} from 'lucide-react';
 
 import exampleImageTable from "../assets/example-image-table.png";
 
@@ -60,69 +75,34 @@ const generateDefaultName = (seed: string) => {
 // Sample task card component
 const SampleTaskChip: React.FC<{
     task: { text: string; icon?: React.ReactElement; image?: string };
-    theme: Theme;
     onClick: () => void;
     disabled?: boolean;
-}> = ({ task, theme, onClick, disabled }) => {
+}> = ({ task, onClick, disabled }) => {
     return (
-        <Box
-            sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '6px 8px',
-                fontSize: '12px',
-                minHeight: '32px',
-                height: 'auto',
-                borderRadius: 2,
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                transition: 'all 0.2s ease-in-out',
-                backgroundColor: alpha(theme.palette.background.paper, 0.9),
-                cursor: disabled ? 'default' : 'pointer',
-                opacity: disabled ? 0.6 : 1,
-                '&:hover': disabled ? {} : {
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                    borderColor: alpha(theme.palette.primary.main, 0.5),
-                    transform: 'translateY(-1px)',
-                },
-            }}
+        <div
+            className={cn(
+                "inline-flex items-center px-2 py-1.5 text-xs min-h-[32px] h-auto rounded-lg",
+                "border border-primary/20 shadow-sm transition-all duration-200 ease-in-out",
+                "bg-background/90",
+                disabled ? "cursor-default opacity-60" : "cursor-pointer hover:shadow-md hover:border-primary/50 hover:-translate-y-px"
+            )}
             onClick={disabled ? undefined : onClick}
         >
-            {/* {task.icon && (
-                <Box sx={{ mr: 1, display: 'flex', alignItems: 'center', color: theme.palette.primary.main }}>
-                    {task.icon}
-                </Box>
-            )} */}
             {task.image && (
-                <Box
-                    component="img"
+                <img
                     src={task.image}
-                    sx={{
-                        width: 24,
-                        height: 24,
-                        objectFit: 'cover',
-                        borderRadius: 0.5,
-                        mr: 1,
-                        border: '1px solid',
-                        borderColor: 'divider'
-                    }}
+                    className="w-6 h-6 object-cover rounded mr-2 border border-border"
+                    alt=""
                 />
             )}
-            <Typography
-                component="div"
-                sx={{
-                    fontSize: '12px',
-                    color: theme.palette.text.primary,
-                    lineHeight: 1.4,
-                }}
-            >
+            <span className="text-xs text-foreground leading-snug">
                 {task.text}
-            </Typography>
-        </Box>
+            </span>
+        </div>
     );
 };
 
-export const DataPreviewBox: React.FC<{sx?: SxProps}> = ({sx}) => {
+export const DataPreviewBox: React.FC<{className?: string}> = ({className}) => {
 
     const dispatch = useDispatch<AppDispatch>();
     const dataCleanBlocks = useSelector((state: DataFormulatorState) => state.dataCleanBlocks);
@@ -133,11 +113,13 @@ export const DataPreviewBox: React.FC<{sx?: SxProps}> = ({sx}) => {
     let selectedTable = focusedDataCleanBlockId ? selectedBlock?.items?.[focusedDataCleanBlockId.itemId] : undefined;
 
     if (!selectedTable) {
-        return <Paper variant="outlined" sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 1, ...sx }}>
-            <Typography variant="body2" sx={{ fontSize: '10px', color: 'text.secondary' }}>
-                No data selected
-            </Typography>
-        </Paper>
+        return (
+            <div className={cn("p-2 flex flex-col gap-2 border rounded-md", className)}>
+                <p className="text-[10px] text-muted-foreground">
+                    No data selected
+                </p>
+            </div>
+        );
     }
 
     if (selectedTable.content.type === 'csv' && selectedTable.content.value) {
@@ -158,57 +140,57 @@ export const DataPreviewBox: React.FC<{sx?: SxProps}> = ({sx}) => {
                 maxHeight={600}
             />
         }
-        return <Paper variant="outlined" sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 1, ...sx }}>
-            <Typography variant="body2" sx={{ fontSize: '10px', color: 'text.secondary' }}>
-                {selectedTable.content.value}
-            </Typography>
-        </Paper>
+        return (
+            <div className={cn("p-2 flex flex-col gap-2 border rounded-md", className)}>
+                <p className="text-[10px] text-muted-foreground">
+                    {selectedTable.content.value}
+                </p>
+            </div>
+        );
     }
     
     // Handle image_url content type
     if (selectedTable.content.type === 'image_url') {
-        return <Paper variant="outlined" sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 1, ...sx }}>
-            <Typography variant="body2" sx={{ fontSize: '10px', color: 'text.secondary' }}>
-                Image URL: {selectedTable.content.value}
-            </Typography>
-            <Box
-                component="img"
-                src={selectedTable.content.value}
-                alt={`Image from ${selectedTable.name || 'data source'}`}
-                sx={{
-                    maxWidth: '100%',
-                    maxHeight: '400px',
-                    objectFit: 'contain',
-                    borderRadius: 1
-
-                }}
-            />
-        </Paper>
+        return (
+            <div className={cn("p-2 flex flex-col gap-2 border rounded-md", className)}>
+                <p className="text-[10px] text-muted-foreground">
+                    Image URL: {selectedTable.content.value}
+                </p>
+                <img
+                    src={selectedTable.content.value}
+                    alt={`Image from ${selectedTable.name || 'data source'}`}
+                    className="max-w-full max-h-[400px] object-contain rounded"
+                />
+            </div>
+        );
     }
     
     // Handle data_url content type
     if (selectedTable.content.type === 'web_url') {
-        return <Paper variant="outlined" sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 1, ...sx }}>
-            <Typography variant="body2" sx={{ fontSize: '12px', color: 'text.primary', fontWeight: 500 }}>
-                Data URL
-            </Typography>
-            <Typography variant="body2" sx={{ fontSize: '10px', color: 'text.secondary', wordBreak: 'break-all' }}>
-                {selectedTable.content.value}
-            </Typography>
-        </Paper>
+        return (
+            <div className={cn("p-2 flex flex-col gap-2 border rounded-md", className)}>
+                <p className="text-xs text-foreground font-medium">
+                    Data URL
+                </p>
+                <p className="text-[10px] text-muted-foreground break-all">
+                    {selectedTable.content.value}
+                </p>
+            </div>
+        );
     }
     
     // Fallback for other content types
-    return <Paper variant="outlined" sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 1, ...sx }}>
-        <Typography variant="body2" sx={{ fontSize: '10px', color: 'text.secondary' }}>
-            {selectedTable.content.value}
-        </Typography>
-    </Paper>
+    return (
+        <div className={cn("p-2 flex flex-col gap-2 border rounded-md", className)}>
+            <p className="text-[10px] text-muted-foreground">
+                {selectedTable.content.value}
+            </p>
+        </div>
+    );
 }
 
 export const DataLoadingInputBox = React.forwardRef<(() => void) | null, {maxLines?: number, onStreamingContentUpdate?: (content: string) => void, abortControllerRef?: React.MutableRefObject<AbortController | null>}>(({maxLines = 4, onStreamingContentUpdate, abortControllerRef}, ref) => {
     const dispatch = useDispatch<AppDispatch>();
-    const theme = useTheme();
     const activeModel = useSelector(dfSelectors.getActiveModel);
     const dataCleanBlocks = useSelector((state: DataFormulatorState) => state.dataCleanBlocks);
     const cleanInProgress = useSelector((state: DataFormulatorState) => state.cleanInProgress);
@@ -273,12 +255,12 @@ export const DataLoadingInputBox = React.forwardRef<(() => void) | null, {maxLin
         {
             text: "Extract top repos from https://github.com/microsoft",
             fullText: "extract the top repos information from https://github.com/microsoft?q=&type=all&language=&sort=stargazers",
-            icon: <LanguageIcon sx={{ fontSize: 18 }} />
+            icon: <Globe className="w-[18px] h-[18px]" />
         },
         {
             text: "Extract data from this image",
             fullText: "help me extract data from this image",
-            icon: <ImageIcon sx={{ fontSize: 18 }} />,
+            icon: <Image className="w-[18px] h-[18px]" />,
             image: exampleImageTable
         },
         {
@@ -296,12 +278,12 @@ Revenue in More Personal Computing was $13.5 billion and increased 9%, with the 
 ·        Windows OEM and Devices revenue increased 3%
 ·        Xbox content and services revenue increased 13% (up 12% in constant currency)
 ·        Search and news advertising revenue excluding traffic acquisition costs increased 21% (up 20% in constant currency)\"`,
-            icon: <TextFieldsIcon sx={{ fontSize: 18 }} />
+            icon: <Type className="w-[18px] h-[18px]" />
         },
         {
             text: "Generate UK dynasty dataset",
             fullText: "help me generate a dataset about uk dynasty with their years of reign and their monarchs",
-            icon: <DatasetIcon sx={{ fontSize: 18 }} />
+            icon: <Database className="w-[18px] h-[18px]" />
         }
     ];
 
@@ -550,144 +532,137 @@ Revenue in More Personal Computing was $13.5 billion and increased 9%, with the 
     let inputImages = [...userImages, ...additionalImages];
 
     return (
-        <Stack sx={{ py: 1, position: 'relative' }} direction="row" spacing={1} alignItems="flex-end">
-            {cleanInProgress && <LinearProgress sx={{ width: '100%', height: '100%', position: 'absolute', opacity: 0.1, top: 0, left: 0, right: 0, zIndex: 1, pointerEvents: 'none' }} />}    
-            <Box sx={{ flex: 1, position: 'relative' }}>
+        <div className="py-2 relative flex flex-row gap-2 items-end">
+            {cleanInProgress && (
+                <div className="absolute inset-0 z-10 pointer-events-none opacity-10">
+                    <Progress value={undefined} className="w-full h-full" />
+                </div>
+            )}
+            <div className="flex-1 relative">
             
             {/* HTML Address Chips */}
             {extractedUrls.length > 0 && (
-                <Box sx={{ 
-                    display: 'flex', 
-                    flexDirection: 'row', 
-                    flexWrap: 'wrap', 
-                    gap: 0.5, 
-                    mb: 1,
-                    position: 'relative' 
-                }}>
+                <div className="flex flex-row flex-wrap gap-1 mb-2 relative">
                     {extractedUrls.map((url, index) => (
-                        <Chip
+                        <Badge
                             key={index}
-                            icon={<LinkIcon sx={{ fontSize: 16 }} />}
-                            label={url.length > 50 ? `${url.substring(0, 47)}...` : url}
-                            variant="outlined"
-                            color="primary"
-                            size="small"
-                            sx={{
-                                maxWidth: existOutputBlocks ? 280 : 400,
-                                backgroundColor: 'primary.50',
-                                borderColor: 'primary.200',
-                                color: 'primary.700',
-                                borderRadius: 2,
-                                '& .MuiChip-label': {
-                                    fontSize: existOutputBlocks ? '11px' : '12px',
-                                    maxWidth: '100%',
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis'
-                                }
-                            }}
-                        />
+                            variant="outline"
+                            className={cn(
+                                "bg-primary/5 border-primary/20 text-primary rounded-lg",
+                                existOutputBlocks ? "max-w-[280px] text-[11px]" : "max-w-[400px] text-xs"
+                            )}
+                        >
+                            <Link className="w-4 h-4 mr-1" />
+                            <span className="truncate">
+                                {url.length > 50 ? `${url.substring(0, 47)}...` : url}
+                            </span>
+                        </Badge>
                     ))}
-                </Box>
+                </div>
             )}
 
             {inputImages.length > 0 && (
-                <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 0.5, mt: 0.5, position: 'relative' }}>
+                <div className="flex flex-row flex-wrap gap-1 mt-1 relative">
                     {inputImages.map((imageUrl, index) => (
-                        <Box key={index} sx={{ display: 'block', position: 'relative' }}>
-                            <Box 
-                                component="img"
+                        <div key={index} className="block relative">
+                            <img
                                 src={imageUrl}
                                 alt={`Pasted image ${index + 1}`}
-                                sx={{
-                                    maxHeight: existOutputBlocks ? 60 : 600,
-                                    maxWidth: inputImages.length > 1 ? '30%' : 600,
-                                    objectFit: 'cover',
-                                    borderRadius: 1,
-                                    border: '1px solid',
-                                    borderColor: 'divider'
-                                }}
+                                className={cn(
+                                    "object-cover rounded border border-border",
+                                    existOutputBlocks ? "max-h-[60px]" : "max-h-[600px]",
+                                    inputImages.length > 1 ? "max-w-[30%]" : "max-w-[600px]"
+                                )}
                             />
-                            {userImages.includes(imageUrl) ? <IconButton  
-                                sx={{position: 'absolute', top: 0, right: 0}}
-                                size="small" 
-                                onClick={() => removeImage(index)}
-                            >
-                                <CancelIcon fontSize="small" />
-                            </IconButton> : <Typography sx={{fontSize: '10px', color: 'text.secondary', position: 'absolute', top: 0, right: 0, width: 16, height: 16, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                                ➤
-                            </Typography>}
-                        </Box>
+                            {userImages.includes(imageUrl) ? (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute top-0 right-0 h-6 w-6"
+                                    onClick={() => removeImage(index)}
+                                >
+                                    <XCircle className="h-4 w-4" />
+                                </Button>
+                            ) : (
+                                <span className="text-[10px] text-muted-foreground absolute top-0 right-0 w-4 h-4 flex items-center justify-center">
+                                    ➤
+                                </span>
+                            )}
+                        </div>
                     ))}
-                </Box>
+                </div>
             )}
             
-            <TextField
-                sx={{
-                    '& .MuiInputBase-root': {
-                        p: 1,
-                        fontSize: existOutputBlocks ? '12px' : '14px',
-                        position: 'relative',
-                        zIndex: 2
-                    }
-                }}
-                placeholder={cleanInProgress ? 'extracting data...' : placeholder}
-                variant="standard"
-                multiline
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-                fullWidth
-                disabled={cleanInProgress}
-                autoComplete="off"
-                maxRows={maxLines}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        sendRequest(prompt, userImages);
-                    }
-                }}
-                slotProps={{
-                    input: {
-                        endAdornment: cleanInProgress ? (
-                            <Tooltip title="Stop generation">
-                                <IconButton color='error' size="small" onClick={stopGeneration}>
-                                    <StopIcon />
-                                </IconButton>
+            <div className="relative">
+                <Textarea
+                    className={cn(
+                        "resize-none border-0 border-b focus-visible:ring-0 rounded-none",
+                        existOutputBlocks ? "text-xs" : "text-sm"
+                    )}
+                    placeholder={cleanInProgress ? 'extracting data...' : placeholder}
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    disabled={cleanInProgress}
+                    autoComplete="off"
+                    rows={Math.min(maxLines, Math.max(1, prompt.split('\n').length))}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            sendRequest(prompt, userImages);
+                        }
+                    }}
+                    onPaste={handlePasteImage}
+                />
+                <div className="absolute right-2 bottom-2 flex items-center gap-1">
+                    {cleanInProgress ? (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-8 w-8 text-destructive hover:text-destructive"
+                                        onClick={stopGeneration}
+                                    >
+                                        <Square className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Stop generation</TooltipContent>
                             </Tooltip>
-                        ) : (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <VoiceInput 
-                                    onTranscription={(text) => {
-                                        setPrompt(prev => prev ? `${prev} ${text}` : text);
-                                    }}
-                                    disabled={cleanInProgress}
-                                />
-                                <IconButton color='primary' size="small" disabled={!canSend} 
-                                    onClick={() => sendRequest(prompt, userImages)}>
-                                    <PrecisionManufacturingIcon />
-                                </IconButton>
-                            </Box>
-                        )
-                    }
-                }}
-                onPaste={handlePasteImage}
-            />
+                        </TooltipProvider>
+                    ) : (
+                        <>
+                            <VoiceInput 
+                                onTranscription={(text) => {
+                                    setPrompt(prev => prev ? `${prev} ${text}` : text);
+                                }}
+                                disabled={cleanInProgress}
+                            />
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 text-primary"
+                                disabled={!canSend} 
+                                onClick={() => sendRequest(prompt, userImages)}
+                            >
+                                <Bot className="h-4 w-4" />
+                            </Button>
+                        </>
+                    )}
+                </div>
+            </div>
             
             {/* Sample Task Cards - Show only when no output blocks exist and not processing */}
             {!existOutputBlocks && !cleanInProgress && (
-                <Box sx={{ mt: 2, mb: 1 }}>
-                    <Typography sx={{ fontSize: '11px', color: 'text.secondary', mb: 1 }}>
+                <div className="mt-4 mb-2">
+                    <p className="text-[11px] text-muted-foreground mb-2">
                         examples
-                    </Typography>
-                    <Box sx={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: 1,
-                    }}>
+                    </p>
+                    <div className="flex flex-wrap gap-2">
                         {sampleTasks.map((task, index) => (
                             <SampleTaskChip
                                 key={index}
                                 task={task}
-                                theme={theme}
                                 onClick={async () => {
                                     let imagesToSend: string[] = [];
                                     
@@ -721,11 +696,11 @@ Revenue in More Personal Computing was $13.5 billion and increased 9%, with the 
                                 disabled={cleanInProgress}
                             />
                         ))}
-                    </Box>
-                </Box>
+                    </div>
+                </div>
             )}
-            </Box>
-        </Stack>
+            </div>
+        </div>
     );
 });
 
@@ -804,9 +779,8 @@ export const createOrderedThreadBlocks = (dataCleanBlocks: DataCleanBlock[]): Th
 };
 
 
-export const SingleDataCleanThreadView: React.FC<{thread: ThreadBlock, sx?: SxProps}> = ({thread, sx}) => {
+export const SingleDataCleanThreadView: React.FC<{thread: ThreadBlock, className?: string}> = ({thread, className}) => {
     const {threadIndex, blocks, leafBlock} = thread;
-    const theme = useTheme();
 
     const dispatch = useDispatch<AppDispatch>();
     const focusedDataCleanBlockId = useSelector((state: DataFormulatorState) => state.focusedDataCleanBlockId);
@@ -814,177 +788,131 @@ export const SingleDataCleanThreadView: React.FC<{thread: ThreadBlock, sx?: SxPr
     let isThreadFocused = blocks.some(block => block.id === focusedDataCleanBlockId?.blockId);
 
     return (
-        <Box sx={{
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 0,
-            mb: 2,
-            borderRadius: 2,
-            //boxShadow: isThreadFocused ? "0 2px 8px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.12)" : "none",
-            transition: 'all 0.2s ease-in-out',
-            // '&:hover': {
-            //     boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-            // },
-            ...sx
-        }}>
+        <div className={cn(
+            "flex flex-col gap-0 mb-4 rounded-lg transition-all duration-200 ease-in-out",
+            className
+        )}>
             {/* Thread header */}
-            <Box sx={{ display: 'flex', direction: 'ltr', margin: '2px 2px 8px 2px' }}>
-                <Divider flexItem sx={{
-                    margin: 'auto',
-                    "& .MuiDivider-wrapper": { display: 'flex', flexDirection: 'row' },
-                    "&::before, &::after": { borderColor: alpha(theme.palette.divider, 0.2), borderWidth: '2px', width: 60 },
-                }}>
-                    <Typography sx={{ fontSize: "10px",   textTransform: 'none' }}>
+            <div className="flex mx-0.5 mb-2">
+                <div className="flex items-center w-full">
+                    <div className="flex-1 border-t-2 border-border/20 w-[60px]" />
+                    <span className="px-2 text-[10px] text-muted-foreground">
                         {`loading - ${threadIndex + 1}`}
-                    </Typography>
-                </Divider>
-            </Box>
+                    </span>
+                    <div className="flex-1 border-t-2 border-border/20 w-[60px]" />
+                </div>
+            </div>
             
             {/* Thread content */}
             {blocks.map((block, blockIndex) => {
                 const isLastBlock = blockIndex === blocks.length - 1;
                 
                 return (
-                    <Box key={block.id} sx={{ display: 'flex', flexDirection: 'column', gap: 0}}>
+                    <div key={block.id} className="flex flex-col gap-0">
                         {/* Start circle for the first block */}
                         {blockIndex === 0 && (
-                            <Box sx={{ display: 'flex', alignItems: 'center', ml: '5px' }}>
-                                <PanoramaFishEyeIcon sx={{ fontSize: 7, color: 'darkgray' }} />
-                            </Box>
+                            <div className="flex items-center ml-[5px]">
+                                <Circle className="w-[7px] h-[7px] text-gray-400" />
+                            </div>
                         )}
                         
-                        <Box sx={{borderLeft: isThreadFocused ? '3px solid' : '1px dashed', 
-                                borderColor: isThreadFocused ? 'primary.light' : ' rgba(0, 0, 0, 0.3)',
-                                py: blockIndex === 0 ? 0.5 : 1.5, px: 1, 
-                                  display: 'flex', alignItems: 'center', ml: isThreadFocused ? '7px' : '8px'}}>
-                        </Box>
+                        <div className={cn(
+                            "py-1.5 px-2 flex items-center",
+                            blockIndex === 0 ? "py-1" : "py-3",
+                            isThreadFocused 
+                                ? "border-l-[3px] border-primary/60 ml-[7px]" 
+                                : "border-l border-dashed border-black/30 ml-2"
+                        )} />
 
                         {/* User Instruction Card (styled like TriggerCard) */}
-                        <Card 
-                            variant="outlined" 
-                            sx={{
-                                backgroundColor: alpha(theme.palette.custom.main, 0.05), 
-                                fontSize: '10px', 
-                                display: 'flex', 
-                                flexDirection: 'row', 
-                                alignItems: 'center', 
-                                gap: '2px',
-                            }}
-                        >
-                            <PrecisionManufacturingIcon sx={{ml: 1, color: 'darkgray', width: '14px', height: '14px'}} />
-                            <Box sx={{margin: "4px 8px 4px 2px"}}>
+                        <Card className="bg-accent/5 text-[10px] flex flex-row items-center gap-0.5">
+                            <Bot className="ml-2 text-gray-400 w-[14px] h-[14px]" />
+                            <div className="m-1 mr-2">
                                 {/* Text prompt */}
                                 {block.derive.prompt && (
-                                    <Typography fontSize="inherit" sx={{
-                                        textAlign: 'center', 
-                                        textWrap: 'balance',
-                                        minWidth: '40px',
-                                        color: 'rgba(0,0,0,0.7)',
-                                        display: '-webkit-box',
-                                        overflow: 'auto',
-                                        textOverflow: 'ellipsis',
-                                        wordBreak: 'break-word',
-                                        maxHeight: 100
-                                    }}>
+                                    <p className="text-[10px] text-center text-balance min-w-[40px] text-black/70 overflow-auto text-ellipsis break-words max-h-[100px]">
                                         "{block.derive.prompt}"
-                                    </Typography>
+                                    </p>
                                 )}
                                 
                                 {/* Images if present */}
                                 {block.derive.artifacts && block.derive.artifacts.filter(a => a.type === 'image_url').length > 0 && (
-                                    <Box sx={{ 
-                                        display: 'flex', 
-                                        flexWrap: 'wrap',
-                                        gap: 0.5,
-                                        py: 0.5,
-                                    }}>
+                                    <div className="flex flex-wrap gap-1 py-1">
                                         {block.derive.artifacts
                                             .filter(artifact => artifact.type === 'image_url')
                                             .map((artifact, imgIndex) => (
-                                            <Box
+                                            <img
                                                 key={imgIndex}
-                                                component="img"
                                                 src={artifact.value}
                                                 alt={`User uploaded image ${imgIndex + 1}`}
-                                                sx={{
-                                                    width: 'auto',
-                                                    height: 40,
-                                                    maxWidth: 100,
-                                                    objectFit: 'cover',
-                                                    borderRadius: 0.5,
-                                                    border: '1px solid',
-                                                    borderColor: 'divider'
-                                                }}
+                                                className="w-auto h-10 max-w-[100px] object-cover rounded-sm border border-border"
                                             />
                                         ))}
-                                    </Box>
+                                    </div>
                                 )}
-                            </Box>
+                            </div>
                         </Card>
                         
                         {/* Down arrow connecting instruction to output */}
-                        <Box sx={{ display: 'flex', alignItems: 'center',}}>
-                            <SouthIcon color={isThreadFocused ? 'primary' : 'secondary'} sx={{ fontSize: 16, ml: 0.5 }} />
-                        </Box>
+                        <div className="flex items-center">
+                            <ArrowDown className={cn(
+                                "w-4 h-4 ml-1",
+                                isThreadFocused ? "text-primary" : "text-muted-foreground"
+                            )} />
+                        </div>
                         
                         {/* Output Cards (styled like primary colored cards) */}
                         {block.items?.map((table, itemId) => {
                             const isItemSelected = block.id === focusedDataCleanBlockId?.blockId && itemId === focusedDataCleanBlockId.itemId;
                             return (
                                 <Card
-                                    variant="outlined"
-                                    sx={{
-                                        py: 0,
-                                        mt: itemId === 0 ? 0 : 0.5,
-                                        border: isItemSelected ? `2px solid ${theme.palette.primary.light}` : '1px solid lightgray',
-                                        cursor: 'pointer',
-                                        backgroundColor: alpha(theme.palette.primary.light, 0.1), 
-                                        '&:hover': {
-                                            boxShadow: '0 0 3px rgba(33,33,33,.2)',
-                                            transform: "translate(0px, 1px)",  
-                                        }
-                                    }}
+                                    key={itemId}
+                                    className={cn(
+                                        "py-0 cursor-pointer bg-primary/10 hover:shadow hover:translate-y-px transition-all",
+                                        itemId === 0 ? "mt-0" : "mt-1",
+                                        isItemSelected 
+                                            ? "border-2 border-primary/60" 
+                                            : "border border-gray-300"
+                                    )}
                                     onClick={() => dispatch(dfActions.setFocusedDataCleanBlockId({blockId: block.id, itemId: itemId}))}
                                 >
-                                    <Box sx={{ margin: '0px', display: 'flex', py: 0.5 }}>
-                                        <Stack direction="row" sx={{ 
-                                            marginLeft: 0.5, marginRight: 'auto', fontSize: 12, width: 'calc(100% - 8px)',
-                                            alignItems: 'center' }} gap={"2px"}>
-                                            {table.content.type === 'csv' && <TableIcon  sx={{color: 'darkgray', fontSize: 14}} />}
-                                            {table.content.type === 'image_url' && <LinkIcon  sx={{color: 'darkgray', fontSize: 14}} />}
-                                            {table.content.type === 'web_url' && <LinkIcon sx={{color: 'darkgray', fontSize: 14}} />}
-                                            <Typography fontSize="inherit" sx={{
-                                                ml: 0.5,
-                                                color: 'rgba(0,0,0,0.7)', 
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                                display: '-webkit-box',
-                                                WebkitLineClamp: 2,
-                                                WebkitBoxOrient: 'vertical',
-                                            }}>
+                                    <div className="flex py-1">
+                                        <div className="flex flex-row gap-0.5 ml-1 mr-auto text-xs w-[calc(100%-8px)] items-center">
+                                            {table.content.type === 'csv' && <Table2 className="text-gray-400 w-[14px] h-[14px]" />}
+                                            {table.content.type === 'image_url' && <Link className="text-gray-400 w-[14px] h-[14px]" />}
+                                            {table.content.type === 'web_url' && <Link className="text-gray-400 w-[14px] h-[14px]" />}
+                                            <span className="text-xs ml-1 text-black/70 overflow-hidden text-ellipsis line-clamp-2">
                                                 {table.name}
-                                            </Typography>
-                                            {isLastBlock && <Tooltip title="delete table">
-                                                <IconButton aria-label="share" size="small" sx={{ ml: 'auto', padding: 0.25, '&:hover': {
-                                                    transform: 'scale(1.2)',
-                                                    transition: 'all 0.2s ease'
-                                                } }} onClick={(event) => {
-                                                    event.stopPropagation();
-                                                    dispatch(dfActions.removeDataCleanBlocks({ blockIds: [block.id] })) 
-                                                }}>
-                                                    <DeleteIcon fontSize="small" sx={{ fontSize: 18 }} color='warning'/>
-                                                </IconButton>
-                                            </Tooltip>
-                                            }
-                                        </Stack>
-                                    </Box>
+                                            </span>
+                                            {isLastBlock && (
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="ml-auto p-0.5 h-6 w-6 hover:scale-110 transition-all duration-200"
+                                                                onClick={(event) => {
+                                                                    event.stopPropagation();
+                                                                    dispatch(dfActions.removeDataCleanBlocks({ blockIds: [block.id] })) 
+                                                                }}
+                                                            >
+                                                                <Trash2 className="w-[18px] h-[18px] text-amber-500" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>delete table</TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            )}
+                                        </div>
+                                    </div>
                                 </Card>
                             );
                         })}
-                    </Box>
+                    </div>
                 );
             })}
-        </Box>
+        </div>
     );
 };
 
@@ -996,21 +924,14 @@ export const DataLoadingThread: React.FC = () => {
     // Use the utility function to create ordered thread blocks
     const threads = createOrderedThreadBlocks(dataCleanBlocks);
 
-    let threadDisplay = <Box sx={{ 
-        flex: 1,  
-        width: 'calc(100% - 8px)',
-        p: 0.5, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        maxHeight: '400px', 
-        overflowY: 'auto', 
-        overflowX: 'hidden'
-    }}>
-        {/* Render each thread */}
-        {threads.map((thread) => (
-            <SingleDataCleanThreadView key={`thread-${thread.threadIndex}`} thread={thread} />
-        ))}
-    </Box>
+    let threadDisplay = (
+        <div className="flex-1 w-[calc(100%-8px)] p-1 flex flex-col max-h-[400px] overflow-y-auto overflow-x-hidden">
+            {/* Render each thread */}
+            {threads.map((thread) => (
+                <SingleDataCleanThreadView key={`thread-${thread.threadIndex}`} thread={thread} />
+            ))}
+        </div>
+    );
 
     return threadDisplay;
 };

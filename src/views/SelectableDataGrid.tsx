@@ -3,29 +3,19 @@
 
 import * as React from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import { Box } from '@mui/system';
 
-import { useTheme } from '@mui/material/styles';
-import { alpha, Paper, Tooltip, CircularProgress, Fade } from "@mui/material";
-
+import { cn } from '@/lib/utils';
 import { Type } from '../data/types';
 import { getIconFromType } from './ViewUtils';
-
-import { IconButton, TableSortLabel, Typography } from '@mui/material';
 
 import _ from 'lodash';
 import { FieldSource } from '../components/ComponentType';
 
-import FileDownloadIcon from '@mui/icons-material/FileDownload';
-import CloudQueueIcon from '@mui/icons-material/CloudQueue';
-import CasinoIcon from '@mui/icons-material/Casino';
+import { Download, Cloud, Dices, ArrowUp, ArrowDown } from 'lucide-react';
 import { getUrls } from '../app/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 export interface ColumnDef {
     id: string;
@@ -75,8 +65,6 @@ export const SelectableDataGrid: React.FC<SelectableDataGridProps> = ({
     const [orderBy, setOrderBy] = React.useState<string | undefined>(undefined);
     const [order, setOrder] = React.useState<'asc' | 'desc'>('asc');
 
-    let theme = useTheme();
-
     const [rowsToDisplay, setRowsToDisplay] = React.useState<any[]>(rows);
     
     // Initialize as true to cover the initial mount delay
@@ -97,18 +85,21 @@ export const SelectableDataGrid: React.FC<SelectableDataGridProps> = ({
 
     const TableComponents = {
         Scroller: React.forwardRef<HTMLDivElement>((props, ref) => (
-            <TableContainer {...props} ref={ref} />
+            <div {...props} ref={ref} className="overflow-auto" />
         )),
-        Table: (props: any) => <Table {...props} />,
+        Table: (props: any) => <table {...props} className="w-full caption-bottom text-sm" />,
         TableHead: React.forwardRef<HTMLTableSectionElement>((props, ref) => (
-            <TableHead {...props} ref={ref} className='table-header-container' />
+            <thead {...props} ref={ref} className='table-header-container [&_tr]:border-b' />
         )),
         TableRow: (props: any) => {
             const index = props['data-index'];
-            return <TableRow {...props} style={{backgroundColor: index % 2 == 0 ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.02)"}}/>
+            return <tr {...props} className={cn(
+                "border-b transition-colors",
+                index % 2 === 0 ? "bg-white/5" : "bg-black/[0.02]"
+            )}/>
         },
         TableBody: React.forwardRef<HTMLTableSectionElement>((props, ref) => (
-            <TableBody {...props} ref={ref} />
+            <tbody {...props} ref={ref} className="[&_tr:last-child]:border-0" />
         )),
     }
 
@@ -151,162 +142,145 @@ export const SelectableDataGrid: React.FC<SelectableDataGridProps> = ({
     };
 
     return (
-        <Box className="table-container table-container-small"
-            sx={{
-                width: '100%',
-                height: '100%',
-                position: 'relative',
-                "& .MuiTableCell-root": {
-                    fontSize: 12, maxWidth: "120px", py: '2px', cursor: "default",
-                    overflow: "clip", textOverflow: "ellipsis", whiteSpace: "nowrap"
-                }
-            }}>
+        <div className="table-container table-container-small w-full h-full relative [&_.table-cell]:text-xs [&_.table-cell]:max-w-[120px] [&_.table-cell]:py-0.5 [&_.table-cell]:cursor-default [&_.table-cell]:overflow-clip [&_.table-cell]:text-ellipsis [&_.table-cell]:whitespace-nowrap">
             {/* Loading Overlay */}
             {isLoading && (
-                <Box sx={{ 
-                    position: 'absolute', 
-                    top: 0, 
-                    left: 0, 
-                    right: 0,
-                    zIndex: 10, 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                    padding: '8px',
-                    height: '100%',
-                    borderTopLeftRadius: '4px',
-                    borderTopRightRadius: '4px'
-                }}>
-                    <CircularProgress size={24} sx={{ mr: 1, color: 'lightgray' }} />
-                    <Typography variant="body2" color="text.secondary">Loading ...</Typography>
-                </Box>
+                <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center bg-white/70 p-2 h-full rounded-t">
+                    <Loader2 className="size-6 mr-2 text-gray-300 animate-spin" />
+                    <span className="text-sm text-muted-foreground">Loading ...</span>
+                </div>
             )}
-            <Fade in={!isLoading} timeout={{appear: 300, enter: 300, exit: 2000}}>
-                <Box sx={{ flex: '1 1', display: 'flex', flexDirection: 'column' }}>
-                    <TableVirtuoso
-                            style={{ flex: '1 1' }}
-                            data={rowsToDisplay}
-                            components={TableComponents}
-                            fixedHeaderContent={() => {
-                        return (
-                            <TableRow key='header-fixed' style={{ paddingRight: 0, marginRight: '17px', height: '24px'}}>
-                                {columnDefs.map((columnDef, index) => {
-                                    let backgroundColor = "white";
-                                    let borderBottomColor = theme.palette.primary.main;
-                                    if (columnDef.source == "custom") {
-                                        backgroundColor = alpha(theme.palette.custom.main, 0.05);
-                                        borderBottomColor = theme.palette.custom.main;
-                                    } else {
-                                        backgroundColor = "white";
-                                        borderBottomColor = theme.palette.primary.main;
-                                    }
+            <div className={cn(
+                "flex-1 flex flex-col transition-opacity duration-300",
+                isLoading ? "opacity-0" : "opacity-100"
+            )}>
+                <TableVirtuoso
+                        style={{ flex: '1 1' }}
+                        data={rowsToDisplay}
+                        components={TableComponents}
+                        fixedHeaderContent={() => {
+                    return (
+                        <tr key='header-fixed' style={{ paddingRight: 0, marginRight: '17px', height: '24px'}}>
+                            {columnDefs.map((columnDef, index) => {
+                                const isCustomSource = columnDef.source === "custom";
 
-                                    return (
-                                        <TableCell
-                                            className='data-view-header-cell'
-                                            key={columnDef.id}
-                                            align={columnDef.align}
-                                            sx={{p: 0, minWidth: columnDef.minWidth, width: columnDef.width,}}
-                                        >
-                                            <Tooltip title={`${columnDef.label}`} >
-                                                <Box className="data-view-header-container" 
-                                                     sx={{ backgroundColor, borderBottomColor, borderBottomWidth: '2px', borderBottomStyle: 'solid'}}>
-                                                    <TableSortLabel
-                                                    className="data-view-header-title"
-                                                    sx={{ display: "flex", flexDirection: "row", width: "100%" }}
-                                                    active={orderBy === columnDef.id}
-                                                    direction={orderBy === columnDef.id ? order : 'asc'}
-                                                    onClick={() => {
-                                                        let newOrder: 'asc' | 'desc' = 'asc';
-                                                        let newOrderBy : string | undefined = columnDef.id;
-                                                        if (orderBy === columnDef.id && order === 'asc') {
-                                                            newOrder = 'desc';
-                                                        } else if (orderBy === columnDef.id && order === 'desc') {
-                                                            newOrder = 'asc';
-                                                            newOrderBy = undefined;
-                                                        } else {
-                                                            newOrder = 'asc';
-                                                        }
-
-                                                        setOrder(newOrder);
-                                                        setOrderBy(newOrderBy);
-                                                        
-                                                        if (virtual) {
-                                                            fetchVirtualData(newOrderBy ? [newOrderBy] : [], newOrder);
-                                                        }
-                                                    }}
+                                return (
+                                    <th
+                                        className='data-view-header-cell table-cell p-0 text-left align-middle font-medium whitespace-nowrap'
+                                        key={columnDef.id}
+                                        style={{ 
+                                            minWidth: columnDef.minWidth, 
+                                            width: columnDef.width,
+                                            textAlign: columnDef.align 
+                                        }}
+                                    >
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div 
+                                                    className={cn(
+                                                        "data-view-header-container border-b-2 border-solid",
+                                                        isCustomSource 
+                                                            ? "bg-orange-50 border-orange-500" 
+                                                            : "bg-white border-primary"
+                                                    )}
                                                 >
-                                                    <span role="img" style={{ fontSize: "inherit", padding: "2px", display: "inline-flex", alignItems: "center" }}>
-                                                        {getIconFromType(columnDef.dataType)}
-                                                    </span>
-                                                    <Typography className="data-view-header-name">
-                                                        {columnDef.label}
-                                                    </Typography>
-                                                </TableSortLabel>
-                                            </Box>
-                                            </Tooltip>
-                                        </TableCell>
-                                    );
-                                })}
-                            </TableRow>
-                        )
-                    }}
-                    itemContent={(rowIndex, data) => {
-                        return (
-                            <>
-                                {columnDefs.map((column, colIndex) => {
-                                    let backgroundColor = "white";
-                                    if (column.source == "custom") {
-                                        backgroundColor = alpha(theme.palette.custom.main, 0.05);
-                                    } else {
-                                        backgroundColor = "rgba(255,255,255,0.05)";
-                                    }
+                                                    <button
+                                                        className="data-view-header-title flex flex-row w-full items-center text-left hover:bg-accent/50 transition-colors px-1"
+                                                        onClick={() => {
+                                                            let newOrder: 'asc' | 'desc' = 'asc';
+                                                            let newOrderBy : string | undefined = columnDef.id;
+                                                            if (orderBy === columnDef.id && order === 'asc') {
+                                                                newOrder = 'desc';
+                                                            } else if (orderBy === columnDef.id && order === 'desc') {
+                                                                newOrder = 'asc';
+                                                                newOrderBy = undefined;
+                                                            } else {
+                                                                newOrder = 'asc';
+                                                            }
 
-                                    return (
-                                        <TableCell
-                                            key={`col-${colIndex}-row-${rowIndex}`}
-                                            sx={{backgroundColor}}
-                                            align={column.align || 'left'}
-                                        >
-                                            {column.format ? column.format(data[column.id]) : data[column.id]}
-                                        </TableCell>
-                                    )
-                                })}
-                            </>
-                        )
-                    }}
-                />
-                </Box>
-            </Fade>
-            <Paper variant="outlined"
-                sx={{ display: 'flex', flexDirection: 'row',  position: 'absolute', bottom: 6, right: 12 }}>
-                <Box sx={{display: 'flex', alignItems: 'center', mx: 1}}>
-                    <Typography sx={{display: 'flex', alignItems: 'center', fontSize: '12px'}}>
-                        {virtual && <CloudQueueIcon sx={{fontSize: 16, mr: 1}}/> }
+                                                            setOrder(newOrder);
+                                                            setOrderBy(newOrderBy);
+                                                            
+                                                            if (virtual) {
+                                                                fetchVirtualData(newOrderBy ? [newOrderBy] : [], newOrder);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <span role="img" className="text-inherit p-0.5 inline-flex items-center">
+                                                            {getIconFromType(columnDef.dataType)}
+                                                        </span>
+                                                        <span className="data-view-header-name flex-1 truncate">
+                                                            {columnDef.label}
+                                                        </span>
+                                                        {orderBy === columnDef.id && (
+                                                            order === 'asc' 
+                                                                ? <ArrowUp className="size-3 ml-1" />
+                                                                : <ArrowDown className="size-3 ml-1" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                {columnDef.label}
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </th>
+                                );
+                            })}
+                        </tr>
+                    )
+                }}
+                itemContent={(rowIndex, data) => {
+                    return (
+                        <>
+                            {columnDefs.map((column, colIndex) => {
+                                const isCustomSource = column.source === "custom";
+
+                                return (
+                                    <td
+                                        key={`col-${colIndex}-row-${rowIndex}`}
+                                        className={cn(
+                                            "table-cell p-2 align-middle whitespace-nowrap",
+                                            isCustomSource ? "bg-orange-50" : "bg-white/5"
+                                        )}
+                                        style={{ textAlign: column.align || 'left' }}
+                                    >
+                                        {column.format ? column.format(data[column.id]) : data[column.id]}
+                                    </td>
+                                )
+                            })}
+                        </>
+                    )
+                }}
+            />
+            </div>
+            <div className="flex flex-row absolute bottom-1.5 right-3 border rounded-md bg-background shadow-sm">
+                <div className="flex items-center mx-2">
+                    <span className="flex items-center text-xs">
+                        {virtual && <Cloud className="size-4 mr-2"/> }
                         {`${rowCount} rows`}
-                    </Typography>
+                    </span>
                     {virtual && rowCount > 10000 && (
-                        <Tooltip title="view 10000 random rows from this table">
-                            <IconButton 
-                                size="small" 
-                                color="primary" 
-                                sx={{marginRight: 1}}
-                                onClick={() => {
-                                    fetchVirtualData([], 'asc');
-                                }}
-                            >
-                                <CasinoIcon sx={{
-                                    fontSize: 18, 
-                                    '&:hover': {
-                                        transform: 'rotate(180deg)'
-                                    }
-                                }} />
-                            </IconButton>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button 
+                                    size="icon-sm" 
+                                    variant="ghost"
+                                    className="mr-2"
+                                    onClick={() => {
+                                        fetchVirtualData([], 'asc');
+                                    }}
+                                >
+                                    <Dices className="size-4 hover:rotate-180 transition-transform" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                view 10000 random rows from this table
+                            </TooltipContent>
                         </Tooltip>
                     )}
-                </Box>
-            </Paper>
-        </Box >
+                </div>
+            </div>
+        </div>
     );
 }

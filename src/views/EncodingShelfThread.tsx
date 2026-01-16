@@ -5,19 +5,6 @@ import { FC, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { DataFormulatorState, dfActions, dfSelectors, fetchCodeExpl, fetchFieldSemanticType, generateFreshChart } from '../app/dfSlice';
 
-import {
-    Box,
-    Typography,
-    Button,
-    CircularProgress,
-    IconButton,
-    Tooltip,
-    Collapse,
-    Stack,
-    Card,
-    ListItemIcon,
-} from '@mui/material';
-
 import React from 'react';
 
 import { EncodingItem, Chart, Trigger } from "../components/ComponentType";
@@ -34,19 +21,17 @@ import { getTriggers, assembleVegaChart } from '../app/utils';
 import { getChartTemplate } from '../components/ChartTemplates';
 import { checkChartAvailability, generateChartSkeleton } from './VisualizationView';
 
-import TableRowsIcon from '@mui/icons-material/TableRowsOutlined';
-import InsightsIcon from '@mui/icons-material/Insights';
-import AnchorIcon from '@mui/icons-material/Anchor';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import { Table2, Sparkles, Anchor, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 
 import { AppDispatch } from '../app/store';
 
 import { EncodingShelfCard, TriggerCard } from './EncodingShelfCard';
 
-import { useTheme } from '@mui/material/styles';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 
 // Property and state of an encoding shelf
 export interface EncodingShelfThreadProps { 
@@ -69,15 +54,15 @@ export let ChartElementFC: FC<{
     let available = checkChartAvailability(chart, conceptShelfItems, tableRows);
 
     if (chart.chartType == "Auto") {
-        return <Box sx={{ position: "relative", display: "flex", flexDirection: "column", margin: 'auto', color: 'darkgray' }}>
-            <InsightsIcon fontSize="large"/>
-        </Box>
+        return <div className="relative flex flex-col m-auto text-gray-500">
+            <Sparkles className="w-9 h-9" />
+        </div>
     }
 
     if (!available || chart.chartType == "Table") {
-        return <Box sx={{ margin: "auto" }} >
+        return <div className="m-auto">
             {generateChartSkeleton(chartTemplate?.icon, 64, 64)}
-        </Box>
+        </div>
     } 
 
     // if (chart.chartType == "Table") {
@@ -93,7 +78,10 @@ export let ChartElementFC: FC<{
     // };
 
     const id = `chart-thumbnail-${chart.id}-${(Math.random() + 1).toString(36).substring(7)}`;
-    const element = <Box id={id} sx={{ margin: "auto", backgroundColor: chart.saved ? "rgba(255,215,0,0.05)" : "white" }}></Box>;
+    const element = <div 
+        id={id} 
+        className={cn("m-auto", chart.saved ? "bg-yellow-500/5" : "bg-white")}
+    ></div>;
 
     // Temporary fix, down sample the dataset
     if (assembledChart["data"]["values"].length > 5000) {
@@ -182,13 +170,17 @@ export const EncodingShelfThread: FC<EncodingShelfThreadProps> = function ({ cha
         return <div
                 key={`${tableId}-table-list-item`}
                 className="table-list-item">
-                <Button variant="text" sx={{textTransform: 'none', padding: 0, minWidth: 0}} onClick={() => { dispatch(dfActions.setFocusedTable(tableId)) }}>
-                <Stack direction="row" sx={{fontSize: '12px'}} alignItems="center" gap={"2px"}>
-                    {table && table.anchored ? <AnchorIcon fontSize="inherit" /> : <TableRowsIcon fontSize="inherit" />}
-                    <Typography sx={{fontSize: '12px'}} >
+                <Button 
+                    variant="ghost" 
+                    className="p-0 min-w-0 h-auto text-primary hover:bg-transparent"
+                    onClick={() => { dispatch(dfActions.setFocusedTable(tableId)) }}
+                >
+                <div className="flex flex-row items-center gap-0.5 text-xs">
+                    {table && table.anchored ? <Anchor className="w-3 h-3" /> : <Table2 className="w-3 h-3" />}
+                    <span className="text-xs">
                         {table.displayId || tableId}
-                    </Typography>
-                </Stack>
+                    </span>
+                </div>
             </Button>
         </div>
     }
@@ -216,48 +208,42 @@ export const EncodingShelfThread: FC<EncodingShelfThreadProps> = function ({ cha
         let previousActiveFields = new Set(i == 0 ? [] : extractActiveFields(triggers[i - 1]))
         let currentActiveFields = new Set(extractActiveFields(trigger))
         let fieldsIdentical = _.isEqual(previousActiveFields, currentActiveFields)
-        return <Box 
+        return <div 
             key={`${trigger.tableId}-trigger-card`}
-            sx={{padding: 0, display: 'flex', flexDirection: 'column'}}>
-            <Box sx={{ml: '8px', height: '4px', borderLeft: '1px solid lightgray'}}></Box>
+            className="p-0 flex flex-col">
+            <div className="ml-2 h-1 border-l border-gray-300"></div>
 
             <TriggerCard 
                 className="encoding-shelf-trigger-card" 
                 trigger={trigger} 
                 hideFields={trigger.instruction != ""} 
                 mini={true} />
-            <Box sx={{ml: '8px', height: '4px', borderLeft: '1px solid darkgray'}}></Box>
-        </Box>
+            <div className="ml-2 h-1 border-l border-gray-600"></div>
+        </div>
     })
     
-    let spaceElement = "" //<Box sx={{padding: '4px 0px', background: 'aliceblue', margin: 'auto', width: '200px', height: '3px', paddingBottom: 0.5}}></Box>;
+    let spaceElement = "" //<div className="py-1 bg-blue-50 mx-auto w-[200px] h-[3px] pb-0.5"></div>;
 
     let truncated = tableList.length > 3;
 
     previousInstructions = truncated ? 
-        <Box  sx={{padding: '4px 0px', display: 'flex', flexDirection: "column" }}>
+        <div className="py-1 flex flex-col">
             {tableList[0]}
-            <Box sx={{height: '24px', borderLeft: '1px dashed darkgray', 
-                position: 'relative',
-                ml: '8px', display: 'flex', alignItems: 'center', cursor: 'pointer',
-                '&:hover': {
-                    ml: '7px',
-                    borderLeft: '3px solid darkgray',
-                }}}>
-                <Typography sx={{fontSize: '12px', color: 'darkgray', ml: 2}}>
+            <div className="h-6 border-l border-dashed border-gray-600 relative ml-2 flex items-center cursor-pointer hover:ml-[7px] hover:border-l-[3px] hover:border-solid hover:border-gray-600">
+                <span className="text-xs text-gray-500 ml-2">
                     ...
-                </Typography>
-            </Box>
+                </span>
+            </div>
             {tableList[tableList.length - 3]}
             {instructionCards[instructionCards.length - 2]}
             {tableList[tableList.length - 2]}
             {instructionCards[instructionCards.length - 1]}
             {tableList[tableList.length - 1]}
-        </Box> 
+        </div> 
     :
-        <Box  sx={{padding: '4px 0px', display: 'flex', flexDirection: "column" }}>
+        <div className="py-1 flex flex-col">
             {interleaveArrays(tableList, instructionCards, spaceElement)}
-        </Box>;
+        </div>;
 
     let postInstruction : any = "";
     if (chartTrigger) {
@@ -266,91 +252,106 @@ export const EncodingShelfThread: FC<EncodingShelfThreadProps> = function ({ cha
         let leafUserCharts = allCharts.filter(c => c.tableRef == resultTable.id).filter(c => c.source == "user");
 
         let endChartCards = leafUserCharts.map((c) => {
-            return <Card variant="outlined" className={"hover-card"} 
-                            onClick={() => { 
-                                dispatch(dfActions.setFocusedChart(c.id));
-                                dispatch(dfActions.setFocusedTable(c.tableRef));
-                            }}
-                sx={{padding: '2px 0 2px 0', display: 'flex', alignItems: "left", width: 'fit-content', "& canvas": {'margin': 1}}}>
+            return <Card 
+                key={c.id}
+                className="hover-card p-0.5 flex items-start w-fit cursor-pointer [&_canvas]:m-px"
+                onClick={() => { 
+                    dispatch(dfActions.setFocusedChart(c.id));
+                    dispatch(dfActions.setFocusedTable(c.tableRef));
+                }}
+            >
                 <ChartElementFC chart={c} tableRows={resultTable.rows.slice(0, 100)} tableMetadata={resultTable.metadata} boxWidth={200} boxHeight={160}/>
             </Card>
         })
 
-        postInstruction = <Collapse orientation="vertical" in={true} sx={{width: "100%"}}>
-            <Box key="post-instruction" sx={{width: '17px', height: '12px'}}>
-                <Box sx={{padding:0, width: '1px', margin:'auto', height: '100%',
-                                        backgroundImage: 'linear-gradient(180deg, darkgray, darkgray 75%, transparent 75%, transparent 100%)',
-                                        backgroundSize: '1px 6px, 3px 100%'}}></Box>
-            </Box>
-            {buildTableCard(resultTable.id)}
-            <Box key="post-instruction" sx={{width: '17px', height: '12px'}}>
-                <Box sx={{padding:0, width: '1px', margin:'auto', height: '100%',
-                                        backgroundImage: 'linear-gradient(180deg, darkgray, darkgray 75%, transparent 75%, transparent 100%)',
-                                        backgroundSize: '1px 6px, 3px 100%'}}></Box>
-            </Box>
-            <Box sx={{display: 'flex', flexDirection: 'column', gap: '4px'}}>
-                {endChartCards}
-            </Box>
-            </Collapse>
+        postInstruction = <Collapsible open={true} className="w-full">
+            <CollapsibleContent>
+                <div key="post-instruction" className="w-[17px] h-3">
+                    <div 
+                        className="p-0 w-px mx-auto h-full"
+                        style={{
+                            backgroundImage: 'linear-gradient(180deg, darkgray, darkgray 75%, transparent 75%, transparent 100%)',
+                            backgroundSize: '1px 6px, 3px 100%'
+                        }}
+                    ></div>
+                </div>
+                {buildTableCard(resultTable.id)}
+                <div key="post-instruction-2" className="w-[17px] h-3">
+                    <div 
+                        className="p-0 w-px mx-auto h-full"
+                        style={{
+                            backgroundImage: 'linear-gradient(180deg, darkgray, darkgray 75%, transparent 75%, transparent 100%)',
+                            backgroundSize: '1px 6px, 3px 100%'
+                        }}
+                    ></div>
+                </div>
+                <div className="flex flex-col gap-1">
+                    {endChartCards}
+                </div>
+            </CollapsibleContent>
+        </Collapsible>
     }
 
     const encodingShelf = (
-        <Box className="encoding-shelf-compact" sx={{height: '100%',
-            width: 236,
-            overflowY: 'auto',
-            transition: 'height 300ms cubic-bezier(0.4, 0, 0.2, 1) 0ms',
-            alignItems: 'flex-start',
-            paddingRight: '8px',
-        }}>
+        <div 
+            className="encoding-shelf-compact h-full w-[236px] overflow-y-auto transition-[height] duration-300 ease-in-out items-start pr-2"
+        >
              {[   
-                <Box
+                <div
                     key="encoding-shelf" 
-                    sx={{display: 'flex'}}> 
+                    className="flex"
+                > 
                     {previousInstructions}
-                </Box>,
+                </div>,
             ]}
-            <Box sx={{width: '17px', height: '12px'}}>
-                <Box sx={{padding:0, width: '1px', margin:'auto', height: '100%',
-                                        backgroundImage: 'linear-gradient(180deg, darkgray, darkgray 75%, transparent 75%, transparent 100%)',
-                                        backgroundSize: '1px 6px, 3px 100%'}}></Box>
-            </Box>
+            <div className="w-[17px] h-3">
+                <div 
+                    className="p-0 w-px mx-auto h-full"
+                    style={{
+                        backgroundImage: 'linear-gradient(180deg, darkgray, darkgray 75%, transparent 75%, transparent 100%)',
+                        backgroundSize: '1px 6px, 3px 100%'
+                    }}
+                ></div>
+            </div>
             <EncodingShelfCard chartId={chartId}/>
             {postInstruction}
-            <Box sx={{height: '12px'}}></Box>
-        </Box>
+            <div className="h-3"></div>
+        </div>
     )
 
-    return <Collapse 
+    return <div 
         key='encoding-shelf'
-        collapsedSize={64} in={!collapseEditor} orientation='horizontal' 
-        sx={{
+        className={cn(
+            "relative transition-all duration-300 ease-in-out overflow-hidden",
+            collapseEditor ? "w-16" : "w-auto"
+        )}
+        style={{
             position: 'relative',
-            '& .MuiCollapse-wrapper': {
-                '& .MuiCollapse-wrapperInner': {
-                    '&::after': collapseEditor ? {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        right: 0,
-                        width: '20px',
-                        height: '100%',
-                        background: 'linear-gradient(to right, transparent, rgba(255,255,255,1))',
-                        pointerEvents: 'none',
-                        zIndex: 1
-                    } : {}
-                }
-            }
-        }}>
-        <Box sx={{display: 'flex', flexDirection: 'row', height: '100%', 
-            position: 'relative',
-        }}>
-            <Tooltip placement="left" title={collapseEditor ? "open editor" : "hide editor"}>
-                <Button color="primary"
-                        sx={{width: 18, minWidth: 18, p: 0}}
-                    onClick={()=>{setCollapseEditor(!collapseEditor)}}
-                >{collapseEditor ? <ChevronLeftIcon sx={{fontSize: 18}} /> : <ChevronRightIcon sx={{fontSize: 18}} />}</Button>
-            </Tooltip>
-            {encodingShelf}
-        </Box>
-    </Collapse>;
+        }}
+    >
+        <div 
+            className={cn(
+                "relative",
+                collapseEditor && "after:content-[''] after:absolute after:top-0 after:right-0 after:w-5 after:h-full after:bg-gradient-to-r after:from-transparent after:to-white after:pointer-events-none after:z-10"
+            )}
+        >
+            <div className="flex flex-row h-full relative">
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button 
+                            variant="ghost"
+                            className="w-[18px] min-w-[18px] p-0 text-primary"
+                            onClick={()=>{setCollapseEditor(!collapseEditor)}}
+                        >
+                            {collapseEditor ? <ChevronLeft className="w-[18px] h-[18px]" /> : <ChevronRight className="w-[18px] h-[18px]" />}
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                        {collapseEditor ? "open editor" : "hide editor"}
+                    </TooltipContent>
+                </Tooltip>
+                {encodingShelf}
+            </div>
+        </div>
+    </div>;
 }

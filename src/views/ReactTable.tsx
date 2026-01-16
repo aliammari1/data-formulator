@@ -2,23 +2,24 @@
 // Licensed under the MIT License.
 
 import * as React from 'react';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TablePagination from '@mui/material/TablePagination';
-import TableRow from '@mui/material/TableRow';
-import { alpha, Box, useTheme } from '@mui/system';
-import Typography from '@mui/material/Typography';
-
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface ColumnDef {
     id: string;
     label: string;
     minWidth?: number;
     align?: 'right';
-    source?: 'derived' | 'original' | 'custom' ;
+    source?: 'derived' | 'original' | 'custom';
     format?: (value: number) => string;
 }
 
@@ -27,20 +28,20 @@ interface CustomReactTableProps {
     columnDefs: ColumnDef[];
     rowsPerPageNum: number;
     compact: boolean;
-    maxCellWidth? : number;
+    maxCellWidth?: number;
     isIncompleteTable?: boolean;
     maxHeight?: number;
 }
 
-export const CustomReactTable: React.FC<CustomReactTableProps> = ({ 
+export const CustomReactTable: React.FC<CustomReactTableProps> = ({
     rows, columnDefs, rowsPerPageNum, compact, maxCellWidth, isIncompleteTable, maxHeight = 340 }) => {
-
-    let theme = useTheme();
 
     const [page, setPage] = React.useState(0);
     const [rowsPerPage, setRowsPerPage] = React.useState(rowsPerPageNum == -1 ? (rows.length > 500 ? 100 : rows.length) : rowsPerPageNum);
 
-    const handleChangePage = (event: unknown, newPage: number) => {
+    const totalPages = Math.ceil(rows.length / rowsPerPage);
+
+    const handleChangePage = (newPage: number) => {
         setPage(newPage);
     };
 
@@ -49,111 +50,135 @@ export const CustomReactTable: React.FC<CustomReactTableProps> = ({
         setPage(0);
     };
 
+    // Helper function to get background class based on column source
+    const getSourceBgClass = (source?: 'derived' | 'original' | 'custom') => {
+        if (source === 'derived') return 'bg-orange-500/5';
+        if (source === 'custom') return 'bg-purple-500/5';
+        return '';
+    };
+
+    // Helper function to get border color class based on column source
+    const getBorderColorClass = (source?: 'derived' | 'original' | 'custom') => {
+        if (source === 'derived') return 'border-b border-orange-500';
+        if (source === 'custom') return 'border-b border-purple-500';
+        return 'border-b border-primary';
+    };
+
+    const maxWidthStyle = maxCellWidth ? { maxWidth: `${maxCellWidth}px` } : { maxWidth: '60px' };
+
     return (
-        <Box className="table-container table-container-small"
-            sx={{
-                width: '100%',
-                "& .MuiTableCell-root": {
-                    fontSize: 10, maxWidth: maxCellWidth || "60px", padding: compact ? "2px 4px" : "6px",
-                    overflow: "clip", textOverflow: "ellipsis", whiteSpace: "nowrap"
-                }
-            }}>
-            <TableContainer sx={{ maxHeight: maxHeight }}>
-                <Table stickyHeader aria-label="sticky table">
-                    <TableHead>
-                        <TableRow>
-                            {columnDefs.map((column, i) => {
-                                let backgroundColor = "none";
-                                let borderBottomColor = theme.palette.primary.main;
-                                if (column.source == "derived") {
-                                    backgroundColor = alpha(theme.palette.derived.main, 0.05);
-                                    borderBottomColor = theme.palette.derived.main;
-                                } else if (column.source == "custom") {
-                                    backgroundColor = alpha(theme.palette.custom.main, 0.05);
-                                    borderBottomColor = theme.palette.custom.main;
-                                } 
-                                return <TableCell
-                                        key={column.id}
-                                        align={column.align}
-                                        sx={{
-                                            minWidth: column.minWidth, fontSize: 12, color: "#333",
-                                            backgroundColor: backgroundColor,
-                                            borderBottomColor, borderBottomWidth: '1px', borderBottomStyle: 'solid'
-                                        }}
-                                    >
-                                        {column.label}
-                                    </TableCell>
-                                })
-                            }
+        <div className="table-container table-container-small w-full">
+            <div
+                className="overflow-auto"
+                style={{ maxHeight: maxHeight }}
+            >
+                <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-background">
+                        <TableRow className="hover:bg-transparent">
+                            {columnDefs.map((column) => (
+                                <TableHead
+                                    key={column.id}
+                                    className={cn(
+                                        'text-xs text-[#333] overflow-hidden text-ellipsis whitespace-nowrap',
+                                        getSourceBgClass(column.source),
+                                        getBorderColorClass(column.source),
+                                        column.align === 'right' && 'text-right'
+                                    )}
+                                    style={{ minWidth: column.minWidth, ...maxWidthStyle }}
+                                >
+                                    {column.label}
+                                </TableHead>
+                            ))}
                         </TableRow>
-                    </TableHead>
+                    </TableHeader>
                     <TableBody>
                         {rows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                            .map((row, i) => {
-                                return (
-                                    <TableRow hover tabIndex={-1} key={i} sx={{ background: i % 2 == 0 ? '#F0F0F0' : "none" }}>
-                                        {columnDefs.map((column, j) => {
-                                            const value = row[column.id];
-                                            let backgroundColor = "none";
-                                            if (column.source == "derived") {
-                                                backgroundColor = alpha(theme.palette.derived.main, 0.05);
-                                            } else if (column.source == "custom") {
-                                                backgroundColor = alpha(theme.palette.custom.main, 0.05);
-                                            } 
-                                            return (
-                                                <TableCell key={column.id} align={column.align}
-                                                    sx={{ backgroundColor }}>
-                                                    {column.format
-                                                        ? column.format(value)
-                                                        : (typeof value === "boolean" ? `${value}` : value)}
-                                                </TableCell>
-                                            );
-                                        })}
-                                    </TableRow>
-                                );
-                            })}
-                            {isIncompleteTable && (
-                                <TableRow>
-                                    {columnDefs.map((column, i) => (
-                                        <TableCell key={i} sx={{padding: 0}} align="left">
-                                            ......
-                                        </TableCell>
-                                    ))}
-                                </TableRow> 
-                            )}
+                            .map((row, i) => (
+                                <TableRow
+                                    key={i}
+                                    tabIndex={-1}
+                                    className={cn(
+                                        'hover:bg-muted/50',
+                                        i % 2 === 0 ? 'bg-[#F0F0F0]' : ''
+                                    )}
+                                >
+                                    {columnDefs.map((column) => {
+                                        const value = row[column.id];
+                                        return (
+                                            <TableCell
+                                                key={column.id}
+                                                className={cn(
+                                                    'text-[10px] overflow-hidden text-ellipsis whitespace-nowrap',
+                                                    compact ? 'py-0.5 px-1' : 'p-1.5',
+                                                    getSourceBgClass(column.source),
+                                                    column.align === 'right' && 'text-right'
+                                                )}
+                                                style={maxWidthStyle}
+                                            >
+                                                {column.format
+                                                    ? column.format(value)
+                                                    : (typeof value === "boolean" ? `${value}` : value)}
+                                            </TableCell>
+                                        );
+                                    })}
+                                </TableRow>
+                            ))}
+                        {isIncompleteTable && (
+                            <TableRow>
+                                {columnDefs.map((column, i) => (
+                                    <TableCell key={i} className="p-0 text-left">
+                                        ......
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
-            </TableContainer>
-            
-            {rowsPerPage < rows.length ? <TablePagination
-                sx={{
-                    "color": "gray",
-                    "& .MuiInputBase-root": { fontSize: 10 },
-                    "& .MuiTablePagination-selectLabel": { fontSize: 10 },
-                    "& .MuiTablePagination-displayedRows": { fontSize: 10 },
-                    "& .MuiButtonBase-root": { padding: 0 },
-                    "& .MuiToolbar-root": { minHeight: 12, height: 18},
-                    "& .MuiTablePagination-toolbar": { paddingRight: 0 },
-                    "& .MuiSvgIcon-root": { fontSize: '1rem' }
-                }}
-                SelectProps={{
-                    MenuProps: {
-                        sx: {
-                            '.MuiPaper-root': {},
-                            '.MuiTablePagination-menuItem': { fontSize: 12 },
-                        },
-                    }
-                }}
-                rowsPerPageOptions={[10]}
-                component="div"
-                count={rows.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                showFirstButton
-                showLastButton
-                //onRowsPerPageChange={handleChangeRowsPerPage}
-            /> : ""}
-        </Box>
+            </div>
+
+            {rowsPerPage < rows.length && (
+                <div className="flex items-center justify-end gap-1 py-1 text-[10px] text-gray-500">
+                    <span>
+                        {page * rowsPerPage + 1}–{Math.min((page + 1) * rowsPerPage, rows.length)} of {rows.length}
+                    </span>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() => handleChangePage(0)}
+                        disabled={page === 0}
+                    >
+                        <ChevronFirst className="h-3 w-3" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() => handleChangePage(page - 1)}
+                        disabled={page === 0}
+                    >
+                        <ChevronLeft className="h-3 w-3" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() => handleChangePage(page + 1)}
+                        disabled={page >= totalPages - 1}
+                    >
+                        <ChevronRight className="h-3 w-3" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() => handleChangePage(totalPages - 1)}
+                        disabled={page >= totalPages - 1}
+                    >
+                        <ChevronLast className="h-3 w-3" />
+                    </Button>
+                </div>
+            )}
+        </div>
     );
 }

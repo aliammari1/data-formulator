@@ -14,47 +14,39 @@ import {
 
 import _ from 'lodash';
 
-import {
-    Button,
-    Tooltip,
-    Typography,
-    IconButton,
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogHeader, 
     DialogTitle,
-    Dialog,
-    DialogContent,
-    DialogActions,
-    Radio,
-    TextField,
-    TableContainer,
-    TableHead,
+    DialogFooter,
+    DialogDescription
+} from '@/components/ui/dialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
     Table,
-    TableCell,
-    TableRow,
     TableBody,
-    Autocomplete,
-    CircularProgress,
-    FormControl,
-    Select,
-    SelectChangeEvent,
-    MenuItem,
-    OutlinedInput,
-    Paper,
-    Box,
-    Divider,
-    Checkbox,
-} from '@mui/material';
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
 
-
-import { alpha, styled, useTheme } from '@mui/material/styles';
-
-import AddCircleIcon from '@mui/icons-material/AddCircle';
-import ClearIcon from '@mui/icons-material/Clear';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { 
+    PlusCircle, 
+    X, 
+    Eye, 
+    EyeOff, 
+    CheckCircle, 
+    XCircle, 
+    HelpCircle, 
+    Info,
+    Loader2
+} from 'lucide-react';
 
 import { getUrls } from '../app/utils';
 
@@ -77,7 +69,6 @@ const simpleHash = (str: string): string => {
 };
 
 export const ModelSelectionButton: React.FC<{}> = ({ }) => {
-    const theme = useTheme();
 
     const dispatch = useDispatch();
     const models = useSelector((state: DataFormulatorState) => state.models);
@@ -179,337 +170,297 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
 
     let readyToTest = newModel && (newApiKey || newApiBase);
 
-    let newModelEntry = <TableRow
-        key={`new-model-entry`}
-        sx={{ '&:last-child td, &:last-child th': { border: 0 }, 
-        padding: "6px 6px"}}
-    >
-        <TableCell align="left" sx={{ width: '120px' }}>
-            <Autocomplete
-                freeSolo
-                value={newEndpoint}
-                onChange={(event: any, newValue: string | null) => {
-                    setNewEndpoint(newValue || "");
-                    if (newModel == "" && newValue == "openai" && providerModelOptions.openai.length > 0) {
-                        setNewModel(providerModelOptions.openai[0]);
-                    }
-                    if (!newApiVersion && newValue == "azure") {
-                        setNewApiVersion("2024-02-15");
-                    }
-                }}
-                options={['openai', 'azure', 'ollama', 'anthropic', 'gemini']}
-                renderOption={(props, option) => (
-                    <Typography {...props} onClick={() => setNewEndpoint(option)} sx={{fontSize: "0.875rem"}}>
-                        {option}
-                    </Typography>
-                )}
-                renderInput={(params) => (
-                    <TextField
-                        {...params}
-                        placeholder="provider"
-                        slotProps={{
-                            input: {
-                                ...params.InputProps,
-                                style: { fontSize: "0.75rem" }
-                            }
-                        }}
-                        size="small"
-                        onChange={(event: any) => setNewEndpoint(event.target.value)}
-                    />
-                )}
-                slotProps={{
-                    listbox: {
-                        style: { padding: 0 }
-                    },
-                }}
-                slots={{
-                    paper: (props) => {
-                        return <Paper {...props}>
-                            <Typography sx={{ p: 1, color: 'gray', fontStyle: 'italic', fontSize: '0.75rem' }}>
-                                examples
-                            </Typography>
-                            {props.children}
-                        </Paper>
-                    }
-                }}
-            />
-        </TableCell>
-        <TableCell align="left" sx={{ minWidth: '180px' }}>
-            <TextField fullWidth size="small" type={showKeys ? "text" : "password"} 
-                slotProps={{
-                    input: {
-                        style: { fontSize: "0.75rem" }
-                    }
-                }}
-                placeholder='optional for keyless endpoint'
-                value={newApiKey}  
-                onChange={(event: any) => { setNewApiKey(event.target.value); }} 
-                autoComplete='off'
-            />
-        </TableCell>
-        <TableCell align="left">
-            <TextField
-                size="small"
-                fullWidth
-                value={newModel}
-                onChange={(event) => { setNewModel(event.target.value); }}
-                placeholder="e.g., gpt-5.1"
-                error={newEndpoint != "" && !newModel}
-                slotProps={{
-                    input: {
-                        style: { fontSize: "0.75rem" },
-                        'aria-label': 'Enter a model name',
-                    }
-                }}
-            />
-        </TableCell>
-        <TableCell align="right">
-            <TextField size="small" type="text" fullWidth
-                placeholder="optional"
-                slotProps={{
-                    input: {
-                        style: { fontSize: "0.75rem" }
-                    }
-                }}
-                value={newApiBase}  
-                onChange={(event: any) => { setNewApiBase(event.target.value); }} 
-                autoComplete='off'
-            />
-        </TableCell>
-        <TableCell align="right">
-            <TextField size="small" type="text" fullWidth
-                slotProps={{
-                    input: {
-                        style: { fontSize: "0.75rem" }
-                    }
-                }}
-                value={newApiVersion}  onChange={(event: any) => { setNewApiVersion(event.target.value); }} 
-                autoComplete='off'
-                placeholder="optional"
-            />
-        </TableCell>
-        <TableCell align="right">
-            <Tooltip title={modelExists ? "provider + model already exists" : "add and test model"}>
-                <span>  
-                    <IconButton color={modelExists ? 'error' : 'primary'}
-                        disabled={!readyToTest}
-                        sx={{cursor: modelExists ? 'help' : 'pointer'}}
-                        onClick={(event) => {
-                            event.stopPropagation()
+    let newModelEntry = (
+        <TableRow key="new-model-entry">
+            <TableCell className="w-[120px]">
+                <Input
+                    value={newEndpoint}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        setNewEndpoint(val);
+                        if (newModel == "" && val == "openai" && providerModelOptions.openai.length > 0) {
+                            setNewModel(providerModelOptions.openai[0]);
+                        }
+                        if (!newApiVersion && val == "azure") {
+                            setNewApiVersion("2024-02-15");
+                        }
+                    }}
+                    placeholder="provider"
+                    className="h-8 text-xs"
+                    list="provider-options"
+                />
+                <datalist id="provider-options">
+                    {['openai', 'azure', 'ollama', 'anthropic', 'gemini'].map(opt => (
+                        <option key={opt} value={opt} />
+                    ))}
+                </datalist>
+            </TableCell>
+            <TableCell className="min-w-[180px]">
+                <Input
+                    type={showKeys ? "text" : "password"}
+                    value={newApiKey}
+                    onChange={(e) => setNewApiKey(e.target.value)}
+                    placeholder="optional for keyless endpoint"
+                    className="h-8 text-xs"
+                    autoComplete="off"
+                />
+            </TableCell>
+            <TableCell>
+                <Input
+                    value={newModel}
+                    onChange={(e) => setNewModel(e.target.value)}
+                    placeholder="e.g., gpt-5.1"
+                    className={cn("h-8 text-xs", newEndpoint && !newModel && "border-destructive")}
+                />
+            </TableCell>
+            <TableCell>
+                <Input
+                    value={newApiBase}
+                    onChange={(e) => setNewApiBase(e.target.value)}
+                    placeholder="optional"
+                    className="h-8 text-xs"
+                    autoComplete="off"
+                />
+            </TableCell>
+            <TableCell>
+                <Input
+                    value={newApiVersion}
+                    onChange={(e) => setNewApiVersion(e.target.value)}
+                    placeholder="optional"
+                    className="h-8 text-xs"
+                    autoComplete="off"
+                />
+            </TableCell>
+            <TableCell>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className={cn("h-8 w-8", modelExists ? "text-destructive" : "text-primary")}
+                                disabled={!readyToTest}
+                                onClick={(event) => {
+                                    event.stopPropagation();
 
-                            let endpoint = newEndpoint;
+                                    let endpoint = newEndpoint;
+                                    const idString = `${endpoint}-${newModel}-${newApiKey}-${newApiBase}-${newApiVersion}`;
+                                    let id = simpleHash(idString);
+                                    let model = {endpoint, model: newModel, api_key: newApiKey, api_base: newApiBase, api_version: newApiVersion, id: id};
 
-                            // Hash the ID to prevent API key exposure
-                            const idString = `${endpoint}-${newModel}-${newApiKey}-${newApiBase}-${newApiVersion}`;
-                            let id = simpleHash(idString);
+                                    dispatch(dfActions.addModel(model));
 
-                            let model = {endpoint, model: newModel, api_key: newApiKey, api_base: newApiBase, api_version: newApiVersion, id: id};
+                                    const testAndAssignModel = (model: ModelConfig) => {
+                                        updateModelStatus(model, 'testing', "");
+                                        let message = {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json', },
+                                            body: JSON.stringify({ model: model }),
+                                        };
+                                        fetch(getUrls().TEST_MODEL, {...message })
+                                            .then((response) => response.json())
+                                            .then((data) => {
+                                                let status = data["status"] || 'error';
+                                                updateModelStatus(model, status, data["message"] || "");
+                                                if (status === 'ok') {
+                                                    setTempSelectedModelId(id);
+                                                }
+                                            }).catch((error) => {
+                                                updateModelStatus(model, 'error', error.message);
+                                            });
+                                    };
 
-                            dispatch(dfActions.addModel(model));
+                                    testAndAssignModel(model); 
+                                    
+                                    setNewEndpoint("");
+                                    setNewModel("");
+                                    setNewApiKey("");
+                                    setNewApiBase("");
+                                    setNewApiVersion("");
+                                }}
+                            >
+                                <PlusCircle className="h-4 w-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            {modelExists ? "provider + model already exists" : "add and test model"}
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </TableCell>
+            <TableCell>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={(event) => {
+                                    event.stopPropagation();
+                                    setNewEndpoint("");
+                                    setNewModel("");
+                                    setNewApiKey("");
+                                    setNewApiBase("");
+                                    setNewApiVersion("");
+                                }}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>clear</TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </TableCell>
+        </TableRow>
+    );
 
-                            // Create a custom test function that assigns to slot on success
-                            const testAndAssignModel = (model: ModelConfig) => {
-                                updateModelStatus(model, 'testing', "");
-                                let message = {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', },
-                                    body: JSON.stringify({
-                                        model: model,
-                                    }),
-                                };
-                                fetch(getUrls().TEST_MODEL, {...message })
-                                    .then((response) => response.json())
-                                    .then((data) => {
-                                        let status = data["status"] || 'error';
-                                        updateModelStatus(model, status, data["message"] || "");
-                                        // Only assign to slot if test is successful
-                                        if (status === 'ok') {
-                                            setTempSelectedModelId(id);
+    let modelTable = (
+        <div className="overflow-auto">
+            <Table className="min-w-[600px]">
+                <TableHeader>
+                    <TableRow>
+                        <TableHead className="font-bold w-[120px] text-xs">Provider</TableHead>
+                        <TableHead className="font-bold w-[160px] text-xs">API Key</TableHead>
+                        <TableHead className="font-bold w-[160px] text-xs">Model</TableHead>
+                        <TableHead className="font-bold w-[200px] text-xs">API Base</TableHead>
+                        <TableHead className="font-bold w-[120px] text-xs">API Version</TableHead>
+                        <TableHead className="font-bold text-xs">Status</TableHead>
+                        <TableHead className="font-bold text-xs"></TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {models.map((model) => {
+                        let status = getStatus(model.id);  
+                        
+                        let statusIcon = status === "unknown" 
+                            ? <HelpCircle className="h-4 w-4 text-yellow-500" /> 
+                            : (status === 'testing' 
+                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                : (status === "ok" 
+                                    ? <CheckCircle className="h-4 w-4 text-green-500" /> 
+                                    : <XCircle className="h-4 w-4 text-red-500" />));
+                        
+                        let message = "Model is ready to use";
+                        if (status === "unknown") {
+                            message = "Click to test if this model is working";
+                        } else if (status === "error") {
+                            const rawMessage = testedModels.find(t => t.id == model.id)?.message || "Unknown error";
+                            message = `Error: ${decodeHtmlEntities(rawMessage)}. Click to retest.`;
+                        }
+
+                        const isError = status === 'error';
+                        const disabledStyle = status !== 'ok' ? "opacity-50" : "";
+                        
+                        return (
+                            <React.Fragment key={model.id}>
+                                <TableRow
+                                    className={cn(
+                                        "hover:bg-muted/50",
+                                        tempSelectedModelId === model.id && "ring-2 ring-primary",
+                                        status === 'ok' ? "cursor-pointer" : "cursor-default"
+                                    )}
+                                    onClick={() => status === 'ok' && setTempSelectedModelId(tempSelectedModelId === model.id ? undefined : model.id)}
+                                >
+                                    <TableCell className={cn("text-xs", disabledStyle)}>
+                                        <span className="font-medium">{model.endpoint}</span>
+                                    </TableCell>
+                                    <TableCell className={cn("text-xs", disabledStyle)}>
+                                        {model.api_key ? (showKeys ? 
+                                            <span className="max-w-[220px] break-all font-mono text-[0.5rem] leading-tight">
+                                                {model.api_key}
+                                            </span> 
+                                            : <span className="font-mono text-muted-foreground">••••••••••••</span>)
+                                             : <span className="text-muted-foreground italic">None</span>
                                         }
-                                    }).catch((error) => {
-                                        updateModelStatus(model, 'error', error.message)
-                                    });
-                            };
-
-                            testAndAssignModel(model); 
-                            
-                            setNewEndpoint("");
-                            setNewModel("");
-                            setNewApiKey("");
-                            setNewApiBase("");
-                            setNewApiVersion("");
-                        }}>
-                        <AddCircleIcon />
-                    </IconButton>
-                </span>
-            </Tooltip>
-        </TableCell>
-        <TableCell align="right">
-            <Tooltip title={"clear"}>
-                <IconButton 
-                    onClick={(event) => {
-                        event.stopPropagation()
-                        setNewEndpoint("");
-                        setNewModel("");
-                        setNewApiKey("");
-                        setNewApiBase("");
-                        setNewApiVersion("");
-                    }}>
-                    <ClearIcon />
-                </IconButton>
-            </Tooltip>
-        </TableCell>
-
-    </TableRow>
-
-    let modelTable = <TableContainer>
-        <Table sx={{ minWidth: 600, "& .MuiTableCell-root": { padding: "4px 8px", borderBottom: "none", fontSize: '0.75rem' } }} size="small" >
-            <TableHead>
-                <TableRow>
-                    <TableCell sx={{fontWeight: 'bold', width: '120px'}}>Provider</TableCell>
-                    <TableCell sx={{fontWeight: 'bold', width: '160px'}}>API Key</TableCell>
-                    <TableCell sx={{fontWeight: 'bold', width: '160px'}} align="left">Model</TableCell>
-                    <TableCell sx={{fontWeight: 'bold', width: '200px'}} align="left">API Base</TableCell>
-                    <TableCell sx={{fontWeight: 'bold', width: '120px'}} align="left">API Version</TableCell>
-                    <TableCell sx={{fontWeight: 'bold'}} align="left">Status</TableCell>
-                    <TableCell sx={{fontWeight: 'bold'}} align="right"></TableCell>
-                </TableRow>
-            </TableHead>
-            <TableBody>
-                {models.map((model) => {
-                    let status =  getStatus(model.id);  
-                    
-                    let statusIcon = status  == "unknown" ? <HelpOutlineIcon color="warning" fontSize="small" /> : ( status == 'testing' ? <CircularProgress size={20} />:
-                            (status == "ok" ? <CheckCircleOutlineIcon color="success" fontSize="small"/> : <ErrorOutlineIcon color="error" fontSize="small"/> ))
-                    
-                    let message = "Model is ready to use";
-                    if (status == "unknown") {
-                        message = "Click to test if this model is working";
-                    } else if (status == "error") {
-                        const rawMessage = testedModels.find(t => t.id == model.id)?.message || "Unknown error";
-                        message = `Error: ${decodeHtmlEntities(rawMessage)}. Click to retest.`;
-                    }
-
-                    const borderStyle = ['error'].includes(status) ? '1px dashed lightgray' : undefined;
-                    const noBorderStyle = ['error'].includes(status) ? 'none' : undefined;
-                    const disabledStyle = status != 'ok' ? { cursor: 'default', opacity: 0.5 } : undefined;
-                    
-                    return (
-                        <React.Fragment key={`${model.id}`}>
-                        <TableRow
-                            key={`${model.id}`}
-                            sx={{ 
-                                '& .MuiTableCell-root': { fontSize: '0.75rem' },
-                                '&:hover': { backgroundColor: '#f8f9fa' },
-                                border: tempSelectedModelId == model.id ? `2px solid ${theme.palette.primary.main}` : 'none',
-                                cursor: status == 'ok' ? 'pointer' : 'default',
-                            }}
-                            onClick={() => status == 'ok' && setTempSelectedModelId(tempSelectedModelId == model.id ? undefined : model.id)}
-                        >
-                            <TableCell align="left" sx={{ borderBottom: noBorderStyle, ...disabledStyle }}>
-                                <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 'inherit' }}>
-                                    {model.endpoint}
-                                </Typography>
-                            </TableCell>
-                            <TableCell component="th" scope="row" sx={{ borderBottom: borderStyle, ...disabledStyle }}>
-                                {model.api_key ? (showKeys ? 
-                                    <Typography
-                                        variant="body2"
-                                        sx={{
-                                            maxWidth: '220px',
-                                            wordBreak: 'break-all',
-                                            whiteSpace: 'normal',
-                                            fontSize: '0.5rem',
-                                            fontFamily: 'monospace',
-                                            lineHeight: 1.3
-                                        }}
-                                    >
-                                        {model.api_key}
-                                    </Typography> 
-                                    : <Typography variant="body2" sx={{ fontSize: 'inherit', fontFamily: 'monospace', color: 'text.secondary' }}>••••••••••••</Typography>)
-                                     : <Typography sx={{color: "text.secondary", fontSize: 'inherit', fontStyle: 'italic'}}>None</Typography>
-                                }
-                            </TableCell>
-                            <TableCell align="left" sx={{ borderBottom: borderStyle, ...disabledStyle }}>
-                                <Typography variant="body2" sx={{ fontSize: 'inherit', fontWeight: 500 }}>
-                                    {model.model}
-                                </Typography>
-                            </TableCell>
-                            <TableCell align="left" sx={{ borderBottom: borderStyle, ...disabledStyle }}>
-                                {model.api_base ? (
-                                    <Typography variant="body2" sx={{ 
-                                        fontSize: 'inherit', 
-                                        maxWidth: '220px',
-                                        wordBreak: 'break-all',
-                                        lineHeight: 1.3
-                                    }}>
-                                        {model.api_base}
-                                    </Typography>
-                                ) : (
-                                    <Typography sx={{ color: "text.secondary", fontSize: 'inherit', fontStyle: 'italic' }}>
-                                        Default
-                                    </Typography>
+                                    </TableCell>
+                                    <TableCell className={cn("text-xs", disabledStyle)}>
+                                        <span className="font-medium">{model.model}</span>
+                                    </TableCell>
+                                    <TableCell className={cn("text-xs", disabledStyle)}>
+                                        {model.api_base ? (
+                                            <span className="max-w-[220px] break-all leading-tight">
+                                                {model.api_base}
+                                            </span>
+                                        ) : (
+                                            <span className="text-muted-foreground italic">Default</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className={cn("text-xs", disabledStyle)}>
+                                        {model.api_version ? (
+                                            <span>{model.api_version}</span>
+                                        ) : (
+                                            <span className="text-muted-foreground italic">Default</span>
+                                        )}
+                                    </TableCell>
+                                    <TableCell>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className={cn(
+                                                            "h-7 text-xs",
+                                                            status === 'ok' && "text-green-600",
+                                                            status === 'error' && "text-red-600",
+                                                            status === 'unknown' && "text-yellow-600"
+                                                        )}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            testModel(model);
+                                                        }}
+                                                    >
+                                                        {statusIcon}
+                                                        <span className="ml-1.5">
+                                                            {status === 'ok' ? 'Ready' : status === 'error' ? 'Retest' : 'Test'}
+                                                        </span>
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent className="max-w-xs">{message}</TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </TableCell>
+                                    <TableCell>
+                                        <TooltipProvider>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            dispatch(dfActions.removeModel(model.id));
+                                                            if (tempSelectedModelId === model.id) {
+                                                                setTempSelectedModelId(undefined);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <X className="h-4 w-4" />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>remove model</TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    </TableCell>
+                                </TableRow>
+                                {isError && (
+                                    <TableRow>
+                                        <TableCell></TableCell>
+                                        <TableCell colSpan={6}>
+                                            <span className="text-[0.625rem] text-red-600">{message}</span>
+                                        </TableCell>
+                                    </TableRow>
                                 )}
-                            </TableCell>
-                            <TableCell align="left" sx={{ borderBottom: borderStyle, ...disabledStyle }}>
-                                {model.api_version ? (
-                                    <Typography variant="body2" sx={{ fontSize: 'inherit' }}>
-                                        {model.api_version}
-                                    </Typography>
-                                ) : (
-                                    <Typography sx={{ color: "text.secondary", fontSize: 'inherit', fontStyle: 'italic' }}>
-                                        Default
-                                    </Typography>
-                                )}
-                            </TableCell>
-                            <TableCell sx={{borderBottom: borderStyle}} align="left">
-                                <Tooltip title={message}>
-                                    <Button
-                                        size="small"
-                                        color={status == 'ok' ?  'success' : status == 'error' ? 'error' : 'warning'}
-                                        onClick ={() => { testModel(model)  }}
-                                        sx={{ p: 0.75, fontSize: "0.75rem", textTransform: "none" }}
-                                        startIcon={statusIcon}
-                                    >
-                                        {status == 'ok' ? 'Ready' : status == 'error' ? 'Retest' : 'Test'}
-                                    </Button>
-                                </Tooltip>
-                            </TableCell>
-                            <TableCell sx={{ borderBottom: borderStyle }} align="right">
-                                <Tooltip title="remove model">
-                                    <IconButton 
-                                        size="small"
-                                        onClick={()=>{
-                                            dispatch(dfActions.removeModel(model.id));
-                                            // Remove from all slots if assigned
-                                            if (tempSelectedModelId == model.id) {
-                                                setTempSelectedModelId(undefined);
-                                            }
-                                        }}
-                                        sx={{ p: 0.75 }}
-                                    >
-                                        <ClearIcon fontSize="small"/>
-                                    </IconButton>
-                                </Tooltip>
-                            </TableCell>
-                        </TableRow>
-                        {['error'].includes(status) && (
-                            <TableRow>
-                                <TableCell colSpan={1} align="right" ></TableCell>
-                                <TableCell colSpan={7}>
-                                    <Typography variant="caption" color="#c82c2c" sx={{fontSize: "0.625rem"}}>
-                                        {message} 
-                                    </Typography>
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        </React.Fragment>
-                    )
-                })}
-                {newModelEntry}
+                            </React.Fragment>
+                        );
+                    })}
+                    {newModelEntry}
                 </TableBody>
             </Table>
-    </TableContainer>
+        </div>
+    );
 
     let modelNotReady = tempSelectedModelId == undefined || getStatus(tempSelectedModelId) !== 'ok';
 
@@ -517,77 +468,82 @@ export const ModelSelectionButton: React.FC<{}> = ({ }) => {
     let tempModelName = tempModel ? `${tempModel.endpoint}/${tempModel.model}` : 'Please select a model';
     let selectedModelName = models.find(m => m.id == selectedModelId)?.model || 'Unselected';
 
-    return <>
-        <Tooltip title="Select a model">
-            <Button sx={{fontSize: "inherit", textTransform: "none"}} variant="text" color={modelNotReady ? 'warning' : "primary"} onClick={()=>{setModelDialogOpen(true)}}>
-                {modelNotReady ? 'Select Models' : selectedModelName}
-            </Button>
-        </Tooltip>
-        <Dialog 
-            maxWidth="lg" 
-            open={modelDialogOpen}
-            onClose={(event, reason) => {
-                if (reason !== 'backdropClick') {
-                    setModelDialogOpen(false);
-                }
-            }}
-        >
-            <DialogTitle sx={{display: "flex",  alignItems: "center"}}>Select a model</DialogTitle>
-            <DialogContent >
-            <Box sx={{
-                    display: 'flex', 
-                    color: 'text.secondary',
-                    alignItems: 'flex-start', 
-                    mb: 2,
-                    p: 1.5,
-                    backgroundColor: alpha(theme.palette.info.main, 0.08),
-                }}>
-                    <Box>
-                        <Typography variant="caption" component="div" sx={{ lineHeight: 1.6 }}>
-                            • Models with strong code generation capabilities (e.g., <code style={{ 
-                                backgroundColor: alpha(theme.palette.text.primary, 0.05), 
-                                padding: '1px 4px', 
-                                borderRadius: 3,
-                                fontSize: '0.7rem'
-                            }}>gpt-5.1</code>, <code style={{ 
-                                backgroundColor: alpha(theme.palette.text.primary, 0.05), 
-                                padding: '1px 4px', 
-                                borderRadius: 3,
-                                fontSize: '0.7rem'
-                            }}>claude-sonnet-4-5</code>) provide best experience.
-                        </Typography>
-                        <Typography variant="caption" component="div" sx={{ lineHeight: 1.6, mt: 0.5 }}>
-                            • Model configuration based on LiteLLM. <a href="https://docs.litellm.ai/docs/" target="_blank" rel="noopener noreferrer">See supported providers</a>.
-                            Use <code style={{ 
-                                backgroundColor: alpha(theme.palette.text.primary, 0.05), 
-                                padding: '1px 4px', 
-                                borderRadius: 3,
-                                fontSize: '0.7rem'
-                            }}>openai</code> provider for OpenAI-compatible APIs.
-                        </Typography>
-                        
-                    </Box>
-                </Box>
-                {modelTable}
-                
-            </DialogContent>
-            <DialogActions>
-                {!serverConfig.DISABLE_DISPLAY_KEYS && (
-                    <Button sx={{marginRight: 'auto'}} endIcon={showKeys ? <VisibilityOffIcon /> : <VisibilityIcon />} onClick={()=>{
-                        setShowKeys(!showKeys);}}>
-                            {showKeys ? 'hide' : 'show'} keys
-                    </Button>
-                )}
-                <Button disabled={modelNotReady} sx={{textTransform: 'none'}}
-                    variant={modelNotReady ? 'text' : 'contained'}
-                    onClick={()=>{
-                        dispatch(dfActions.selectModel(tempSelectedModelId));
-                        setModelDialogOpen(false);}}>Use {tempModelName}</Button>
-                <Button onClick={()=>{
-                    setTempSelectedModelId(selectedModelId);
-                    setModelDialogOpen(false);
-                }}>cancel</Button>
-            </DialogActions>
-        </Dialog>
-    </>;
+    return (
+        <>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button 
+                            variant="link" 
+                            className={cn("text-inherit p-0 h-auto", modelNotReady && "text-yellow-600")}
+                            onClick={() => setModelDialogOpen(true)}
+                        >
+                            {modelNotReady ? 'Select Models' : selectedModelName}
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Select a model</TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+            
+            <Dialog open={modelDialogOpen} onOpenChange={setModelDialogOpen}>
+                <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">Select a model</DialogTitle>
+                        <DialogDescription>
+                            Configure and select an AI model for data exploration
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="bg-blue-50 dark:bg-blue-950/20 p-3 rounded-md mb-4">
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            • Models with strong code generation capabilities (e.g., <code className="bg-muted px-1 py-0.5 rounded text-[0.7rem]">gpt-5.1</code>, <code className="bg-muted px-1 py-0.5 rounded text-[0.7rem]">claude-sonnet-4-5</code>) provide best experience.
+                        </p>
+                        <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+                            • Model configuration based on LiteLLM. <a href="https://docs.litellm.ai/docs/" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">See supported providers</a>.
+                            Use <code className="bg-muted px-1 py-0.5 rounded text-[0.7rem]">openai</code> provider for OpenAI-compatible APIs.
+                        </p>
+                    </div>
+                    
+                    <ScrollArea className="flex-1 -mx-6 px-6">
+                        {modelTable}
+                    </ScrollArea>
+                    
+                    <DialogFooter className="flex-row justify-between sm:justify-between gap-2 pt-4">
+                        {!serverConfig.DISABLE_DISPLAY_KEYS && (
+                            <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setShowKeys(!showKeys)}
+                                className="mr-auto"
+                            >
+                                {showKeys ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                                {showKeys ? 'hide' : 'show'} keys
+                            </Button>
+                        )}
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setTempSelectedModelId(selectedModelId);
+                                    setModelDialogOpen(false);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                disabled={modelNotReady}
+                                variant={modelNotReady ? "outline" : "default"}
+                                onClick={() => {
+                                    dispatch(dfActions.selectModel(tempSelectedModelId));
+                                    setModelDialogOpen(false);
+                                }}
+                            >
+                                Use {tempModelName}
+                            </Button>
+                        </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
+    );
 }

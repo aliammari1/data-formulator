@@ -2,22 +2,18 @@
 // Licensed under the MIT License.
 
 import React, { FC, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
-    Box,
-    Card,
-    CardContent,
-    Typography,
-    IconButton,
     Tooltip,
-    Chip,
-} from '@mui/material';
-import { styled } from '@mui/material/styles';
-import { alpha } from '@mui/material/styles';
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { Lightbulb, Info } from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
-
-import LightbulbIcon from '@mui/icons-material/Lightbulb';
-import InfoIcon from '@mui/icons-material/Info';
 
 // Helper function to render text with LaTeX math expressions
 const renderWithMath = (text: string) => {
@@ -120,52 +116,50 @@ const renderWithMath = (text: string) => {
     });
 };
 
-// Styled components for the concept explanation cards
-const ConceptExplanationCard = styled(Card, {
-    shouldForwardProp: (prop) => prop !== 'secondary',
-})<{ secondary: boolean }>(({ theme, secondary}) => ({
-    minWidth: 360,  // Increased from 300
-    maxWidth: 480,  // Increased from 360
-    margin: '4px',
+// Concept explanation card component using Tailwind
+const ConceptExplanationCard: FC<{ secondary: boolean; children: React.ReactNode }> = ({ 
+    secondary, 
+    children 
+}) => (
+    <div 
+        className={cn(
+            "min-w-[360px] max-w-[480px] m-1 rounded-md border border-border/20",
+            "shadow-sm transition-all duration-200 ease-in-out bg-card/90",
+            "hover:shadow-md hover:-translate-y-0.5",
+            secondary ? "hover:border-secondary" : "hover:border-primary"
+        )}
+    >
+        {children}
+    </div>
+);
 
-    borderRadius: '6px',
-    border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-    boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-    transition: 'all 0.2s ease-in-out',
-    backgroundColor: alpha(theme.palette.background.paper, 0.9),
-    '&:hover': {
-        boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-        borderColor: !secondary ? theme.palette.primary.light : theme.palette.secondary.light, 
-        transform: 'translateY(-1px)',
-    },
-}));
+// Concept name component
+const ConceptName: FC<{ secondary: boolean; children: React.ReactNode }> = ({ 
+    secondary, 
+    children 
+}) => (
+    <div 
+        className={cn(
+            "text-xs font-semibold mb-0.5 flex items-center gap-1",
+            secondary ? "text-secondary" : "text-primary"
+        )}
+    >
+        {children}
+    </div>
+);
 
-const ConceptName = styled(Typography, {
-    shouldForwardProp: (prop) => prop !== 'secondary',
-})<{ secondary: boolean }>(({ theme, secondary }) => ({
-    fontSize: '12px',
-    fontWeight: 600,
-    color: secondary ? theme.palette.secondary.main : theme.palette.primary.main,
-    marginBottom: '3px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-}));
-
-const ConceptExplanation = styled(Typography)(({ theme }) => ({
-    fontSize: '11px',
-    lineHeight: 1.4,
-    overflow: 'auto',
-    color: theme.palette.text.primary,
-    fontStyle: 'italic',
-    '& .katex': {
-        fontSize: '12px',
-        lineHeight: 1.2,
-    },
-    '& .katex-display': {
-        margin: '4px 0',
-    },
-}));
+// Concept explanation component
+const ConceptExplanation: FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div 
+        className={cn(
+            "text-[11px] leading-snug overflow-auto text-foreground italic",
+            "[&_.katex]:text-xs [&_.katex]:leading-tight",
+            "[&_.katex-display]:my-1"
+        )}
+    >
+        {children}
+    </div>
+);
 
 export interface ConceptExplanationItem {
     field: string;
@@ -193,63 +187,54 @@ export const ConceptExplCards: FC<ConceptExplCardsProps> = ({
 
 
     return (
-        <Box sx={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+        <div className="relative flex justify-center">
             {/* Concepts Grid */}
-            <Box sx={{ 
-                    display: 'grid', 
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))',  // Increased from 180px
-                    gap: 1,
-                    overflow: 'hidden',
-                }}>
-                    {displayConcepts.map((concept, index) => {
-                        let secondary = concept.field == "Statistical Analysis";
-                        return (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(360px,1fr))] gap-1 overflow-hidden">
+                {displayConcepts.map((concept, index) => {
+                    let secondary = concept.field == "Statistical Analysis";
+                    return (
                         <ConceptExplanationCard key={`${concept.field}-${index}`} secondary={secondary}>
-                            <CardContent sx={{ padding: '6px !important' }}>
+                            <div className="p-1.5">
                                 <ConceptName secondary={secondary}>
                                     {concept.field}
                                 </ConceptName>
                                 <ConceptExplanation>
                                     {renderWithMath(concept.explanation)}
                                 </ConceptExplanation>
-                            </CardContent>
+                            </div>
                         </ConceptExplanationCard>
-                    )})}
-                </Box>
+                    );
+                })}
+            </div>
 
-                {/* Show More/Less Button */}
-                {hasMoreConcepts && (
-                    <Box sx={{ 
-                        display: 'flex', 
-                        justifyContent: 'center', 
-                        marginTop: 1,
-                        paddingTop: 1,
-                        borderTop: '1px solid',
-                        borderColor: 'divider',
-                    }}>
-                        <Tooltip title={expanded ? "Show fewer concepts" : "Show all concepts"}>
-                            <IconButton
-                                size="small"
-                                onClick={() => setExpanded(!expanded)}
-                                sx={{
-                                    fontSize: '10px',
-                                    color: 'text.secondary',
-                                    '&:hover': {
-                                        backgroundColor: 'action.hover',
-                                    },
-                                }}
-                            >
-                                <Typography variant="caption">
-                                    {expanded 
-                                        ? `Show first ${maxCards} concepts` 
-                                        : `Show all ${concepts.length} concepts`
-                                    }
-                                </Typography>
-                            </IconButton>
+            {/* Show More/Less Button */}
+            {hasMoreConcepts && (
+                <div className="flex justify-center mt-1 pt-1 border-t border-border">
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => setExpanded(!expanded)}
+                                    className="text-[10px] text-muted-foreground hover:bg-accent"
+                                >
+                                    <span className="text-xs">
+                                        {expanded 
+                                            ? `Show first ${maxCards} concepts` 
+                                            : `Show all ${concepts.length} concepts`
+                                        }
+                                    </span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                {expanded ? "Show fewer concepts" : "Show all concepts"}
+                            </TooltipContent>
                         </Tooltip>
-                </Box>
+                    </TooltipProvider>
+                </div>
             )}
-        </Box>
+        </div>
     );
 };
 
@@ -273,66 +258,26 @@ export const CodeExplanationCard: FC<{
     children: React.ReactNode;
     transformationIndicatorText: string;
 }> = ({ title, icon, children, transformationIndicatorText }) => (
-    <Card 
-        variant="outlined"
-        sx={{
-            minWidth: "280px", 
-            maxWidth: "1200px", 
-            display: "flex", 
-            flexGrow: 1, 
-            margin: 0,
-            borderRadius: 2,
-            border: '1px solid',
-            borderColor: 'divider',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-            transition: 'all 0.2s ease-in-out',
-            '&:hover': {
-                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                borderColor: 'primary.main',
-            }
-        }}
+    <div 
+        className={cn(
+            "min-w-[280px] max-w-[1200px] flex flex-grow m-0 rounded-lg",
+            "border border-border shadow-sm transition-all duration-200 ease-in-out",
+            "hover:shadow-md hover:border-primary"
+        )}
     >
-        <CardContent 
-            sx={{
-                display: "flex", 
-                flexDirection: "column", 
-                flexGrow: 1, 
-                padding: 0,
-                overflow: 'auto',
-                '&:last-child': { paddingBottom: 0 }
-            }}
-        >
-            <Typography 
-                sx={{ 
-                    fontSize: 14, 
-                    margin: 1.5,
-                    fontWeight: 500,
-                    color: 'text.primary',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5
-
-                }}
-                gutterBottom
-            >
+        <div className="flex flex-col flex-grow p-0 overflow-auto">
+            <p className="text-sm m-3 font-medium text-foreground flex items-center gap-1">
                 {icon}
                 {title} ({transformationIndicatorText})
-            </Typography>
-            <Box 
-                sx={{
-                    display: 'flex', 
-                    flexDirection: "row", 
-                    alignItems: "flex-start", 
-                    flex: 'auto', 
-                    padding: 1.5, 
-                    background: 'background.default',
-                    borderTop: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: '0 0 8px 8px'
-                }}
+            </p>
+            <div 
+                className={cn(
+                    "flex flex-row items-start flex-auto p-3",
+                    "bg-background border-t border-border rounded-b-lg"
+                )}
             >
                 {children}
-            </Box>
-        </CardContent>
-    </Card>
+            </div>
+        </div>
+    </div>
 );

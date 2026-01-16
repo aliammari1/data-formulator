@@ -8,9 +8,7 @@ import { ConceptTransformation, FieldItem } from "../components/ComponentType";
 import { Type } from "../data/types";
 import { BooleanIcon, NumericalIcon, StringIcon, DateIcon, UnknownIcon } from '../icons';
 
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import CommitIcon from '@mui/icons-material/Commit';
+import { Sparkles, BarChart2, GitCommit } from 'lucide-react';
 
 import { DictTable } from '../components/ComponentType';
 
@@ -42,9 +40,9 @@ export const getIconFromType = (t: Type | undefined): JSX.Element => {
         case Type.String:
             return <StringIcon fontSize="inherit" />;
         case Type.Auto:
-            return <AutoFixHighIcon fontSize="inherit" />;
+            return <Sparkles className="w-[1em] h-[1em]" />;
     }
-    return <CommitIcon sx={{opacity: 0.3}} fontSize="inherit" />;
+    return <GitCommit className="w-[1em] h-[1em] opacity-30" />;
 };
 
 export const getIconFromDtype = (t: "quantitative" | "nominal" | "ordinal" | "temporal" | "auto"): JSX.Element => {
@@ -54,11 +52,11 @@ export const getIconFromDtype = (t: "quantitative" | "nominal" | "ordinal" | "te
         case "nominal":
             return <StringIcon fontSize="inherit" />;
         case "ordinal":
-            return <BarChartIcon fontSize="inherit" />;
+            return <BarChart2 className="w-[1em] h-[1em]" />;
         case "temporal":
             return <DateIcon fontSize="inherit" />;
         case "auto":
-            return <AutoFixHighIcon fontSize="inherit" />;
+            return <Sparkles className="w-[1em] h-[1em]" />;
     }
-    return <CommitIcon sx={{opacity: 0.3}} fontSize="inherit" />;
+    return <GitCommit className="w-[1em] h-[1em] opacity-30" />;
 };

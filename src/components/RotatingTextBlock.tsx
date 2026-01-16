@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Box, SxProps } from '@mui/material';
+import { cn } from '@/lib/utils';
 
 interface RotatingTextBlockProps {
     texts: string[];
     rotationInterval?: number;
     transitionDuration?: number;
-    sx?: SxProps;
+    className?: string;
 }
 
 export const RotatingTextBlock: React.FC<RotatingTextBlockProps> = ({
     texts,
     rotationInterval = 3000,
     transitionDuration = 500,
-    sx
+    className
 }) => {
     const [currentTextIndex, setCurrentTextIndex] = useState(0);
     const [isTransitioning, setIsTransitioning] = useState(false);
@@ -31,18 +31,15 @@ export const RotatingTextBlock: React.FC<RotatingTextBlockProps> = ({
     }, [texts.length, rotationInterval, transitionDuration]);
 
     return (
-        <Box
-            component="span"
-            sx={{
-                display: 'inline',
-                position: 'relative',
-                fontWeight: 500,
-                opacity: isTransitioning ? 0 : 1,
-                transition: `opacity ${transitionDuration}ms ease-in-out`,
-                ...sx
-            }}
+        <span
+            className={cn(
+                "inline relative font-medium transition-opacity",
+                isTransitioning ? "opacity-0" : "opacity-100",
+                className
+            )}
+            style={{ transitionDuration: `${transitionDuration}ms` }}
         >
             {texts[currentTextIndex]}
-        </Box>
+        </span>
     );
 };

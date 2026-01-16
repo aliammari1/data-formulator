@@ -1,37 +1,26 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { FC, useEffect, useState } from 'react'
+import { FC, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { useTheme } from '@mui/material/styles';
-import { alpha } from "@mui/material";
 
 import '../scss/ConceptShelf.scss';
 
-import {
-    Box,
-    Typography,
-    Tooltip,
-    Button,
-    Divider,
-    IconButton,
-} from '@mui/material';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
-import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
+import { Eraser, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from 'lucide-react';
 
 import { FieldItem, Channel } from '../components/ComponentType';
 
 import React from 'react';
-import { DataFormulatorState, dfActions, dfSelectors } from '../app/dfSlice';
+import { DataFormulatorState, dfActions } from '../app/dfSlice';
 import { ConceptCard } from './ConceptCard';
 import { Type } from '../data/types';
 import { groupConceptItems } from './ViewUtils';
 import { OperatorCard } from './OperatorCard';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ListIcon from '@mui/icons-material/List';
+import { cn } from '@/lib/utils';
 
 export const genFreshCustomConcept : () => FieldItem = () => {
     return {
@@ -52,7 +41,6 @@ export const ConceptGroup: FC<{groupName: string, fields: FieldItem[]}> = functi
 
     const [expanded, setExpanded] = useState(true);
     const dispatch = useDispatch();
-    const theme = useTheme();   
     const handleCleanUnusedConcepts = () => {
         dispatch(dfActions.clearUnReferencedCustomConcepts());
     };
@@ -61,118 +49,88 @@ export const ConceptGroup: FC<{groupName: string, fields: FieldItem[]}> = functi
     const displayFields = expanded ? fields : fields.slice(0, 6);
     const hasMoreFields = fields.length > 6;
 
-    return <Box>
-        <Box sx={{display: "block", width: "100%"}}>
-            <Divider orientation="horizontal" textAlign="left">
-                <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    cursor: 'pointer',
-                }}
-                    onClick={() => setExpanded(!expanded)}>
-                    <Typography component="h2" sx={{fontSize: "10px", display: 'flex', alignItems: 'center',
-                        '&:hover': {
-                        backgroundColor: 'rgba(0, 0, 0, 0.04)',
-                        '& .expand-icon': {
-                            transition: 'transform 0.3s ease',
-                            transform: 'rotate(180deg)',
-                        }
-                    }
-                    }} color="text.secondary">
-                        {groupName}
-                        {fields.length > 6 && <Typography className="expand-icon" sx={{ml: 0.5, borderRadius: '4px', fontSize: "10px", display: 'flex', alignItems: 'center'}} color="text.secondary">
-                            {expanded ? <ExpandMoreIcon sx={{fontSize: "12px"}} /> : <ExpandLessIcon sx={{fontSize: "12px"}} />}
-                        </Typography>}
-                    </Typography>
-                    {groupName === "new fields" && (
-                        <Tooltip title="clean up unused fields">
-                            <IconButton
-                                size="small"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleCleanUnusedConcepts();
-                                }}
-                                sx={{
-                                    fontSize: "8px",
-                                    minWidth: "auto",
-                                    px: 0.5,
-                                    py: 0.25,
-                                    height: "16px",
-                                    ml: '0',
-                                    '&:hover': {
-                                        color: theme.palette.warning.main,
-                                        backgroundColor: alpha(theme.palette.warning.light, 0.1),
-                                    },
-                                    '&:hover .cleaning-icon': {
-                                        animation: 'spin 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                                        transform: 'rotate(360deg)',
-                                    },
-                                    '@keyframes spin': {
-                                        '0%': {
-                                            transform: 'rotate(0deg)'
-                                        },
-                                        '100%': {
-                                            transform: 'rotate(360deg)'
-                                        }
-                                    }
-                                }}
-                            >
-                                <CleaningServicesIcon className="cleaning-icon" sx={{ fontSize: "10px !important" }} />
-                            </IconButton>
-                        </Tooltip>
-                    )}
-                </Box>
-            </Divider>
-        </Box>
-        
-        {/* Always show first 6 fields */}
-        <Box sx={{ width: '100%' }}>
-            {displayFields.map((field) => (
-                <ConceptCard key={`concept-card-${field.id}`} field={field} />
-            ))}
-        </Box>
+    return (
+        <div>
+            <div className="block w-full">
+                <div className="relative flex items-center w-full py-1">
+                    <Separator className="flex-1" />
+                    <div 
+                        className="flex items-center cursor-pointer px-2"
+                        onClick={() => setExpanded(!expanded)}
+                    >
+                        <h2 className={cn(
+                            "text-[10px] flex items-center text-muted-foreground",
+                            "hover:bg-black/5 rounded"
+                        )}>
+                            {groupName}
+                            {fields.length > 6 && (
+                                <span className={cn(
+                                    "ml-0.5 rounded text-[10px] flex items-center text-muted-foreground",
+                                    "transition-transform duration-300"
+                                )}>
+                                    {expanded ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}
+                                </span>
+                            )}
+                        </h2>
+                        {groupName === "new fields" && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleCleanUnusedConcepts();
+                                        }}
+                                        className={cn(
+                                            "h-4 w-4 min-w-0 px-0.5 py-0.5 ml-0",
+                                            "hover:text-amber-500 hover:bg-amber-100/10",
+                                            "[&:hover_.cleaning-icon]:animate-spin"
+                                        )}
+                                    >
+                                        <Eraser className="cleaning-icon h-2.5 w-2.5" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>clean up unused fields</TooltipContent>
+                            </Tooltip>
+                        )}
+                    </div>
+                    <Separator className="flex-1" />
+                </div>
+            </div>
+            
+            {/* Always show first 6 fields */}
+            <div className="w-full">
+                {displayFields.map((field) => (
+                    <ConceptCard key={`concept-card-${field.id}`} field={field} />
+                ))}
+            </div>
 
-        {/* Collapsible section for additional fields */}
-        {hasMoreFields && !expanded && (
-            <Button
-                onClick={() => setExpanded(true)}
-                sx={{
-                    fontSize: "10px",
-                    color: "text.secondary",
-                    pl: 2,
-                    py: 0.5,
-                    textTransform: 'none',
-                    position: 'relative',
-                    textWrap: 'nowrap',
-                    width: '100%',
-                    justifyContent: 'flex-start',
-                    '&:hover': {
-                        background: 'transparent',
-                        textDecoration: 'underline'
-                    },
-                    '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: '-20px',
-                        left: 0,
-                        right: 0,
-                        height: '20px',
-                        background: 'linear-gradient(to bottom, transparent, white)',
-                        pointerEvents: 'none'
-                    }
-                }}
-            >
-                {`... show all ${fields.length} ${groupName} fields ▾`}
-            </Button>
-        )}
-    </Box>;
+            {/* Collapsible section for additional fields */}
+            {hasMoreFields && !expanded && (
+                <Button
+                    variant="ghost"
+                    onClick={() => setExpanded(true)}
+                    className={cn(
+                        "text-[10px] text-muted-foreground pl-4 py-1 h-auto",
+                        "normal-case relative whitespace-nowrap w-full justify-start",
+                        "hover:bg-transparent hover:underline",
+                        "before:content-[''] before:absolute before:-top-5 before:left-0 before:right-0",
+                        "before:h-5 before:bg-gradient-to-b before:from-transparent before:to-white",
+                        "before:pointer-events-none"
+                    )}
+                >
+                    {`... show all ${fields.length} ${groupName} fields ▾`}
+                </Button>
+            )}
+        </div>
+    );
 }
 
 
 export const ConceptShelf: FC<ConceptShelfProps> = function ConceptShelf() {
 
     const [conceptPanelOpen, setConceptPanelOpen] = useState(false);
-    const theme = useTheme();
 
     // reference to states
     const conceptShelfItems = useSelector((state: DataFormulatorState) => state.conceptShelfItems);
@@ -185,36 +143,36 @@ export const ConceptShelf: FC<ConceptShelfProps> = function ConceptShelf() {
     let groupNames = [...new Set(conceptItemGroups.map(g => g.group))]
 
     let conceptShelf = (
-        <Box className="concept-shelf" sx={{
-            height: 'calc(100% - 16px)',
-            overflow: conceptPanelOpen ? 'auto' : 'hidden',
-            ...(conceptPanelOpen ? {
-            } : {
-                pointerEvents: 'none',
-            })
-        }}>
-            <Box sx={{my: 0.25}}>
-                <Typography className="view-title" component="h2" sx={{textWrap: "nowrap"}}>
+        <div 
+            className={cn(
+                "concept-shelf h-[calc(100%-16px)]",
+                conceptPanelOpen ? "overflow-auto" : "overflow-hidden pointer-events-none"
+            )}
+        >
+            <div className="my-0.5">
+                <h2 className="view-title whitespace-nowrap">
                     Data Fields
-                </Typography>
-            </Box>
-            <Box className="data-fields-group">
-                <Box className="data-fields-list">
-                    <Box sx={{display: "block", width: "100%"}}>
-                        <Divider orientation="horizontal" textAlign="left">
-                            <Typography component="h2" sx={{fontSize: "10px"}} color="text.secondary">
+                </h2>
+            </div>
+            <div className="data-fields-group">
+                <div className="data-fields-list">
+                    <div className="block w-full">
+                        <div className="relative flex items-center w-full py-1">
+                            <Separator className="flex-1" />
+                            <span className="text-[10px] text-muted-foreground px-2">
                                 field operators
-                            </Typography>
-                        </Divider>
-                    </Box>
-                    <Box sx={{display: "flex", width: "100%", flexWrap: 'wrap'}}>
+                            </span>
+                            <Separator className="flex-1" />
+                        </div>
+                    </div>
+                    <div className="flex w-full flex-wrap">
                         <OperatorCard operator="count" />
                         <OperatorCard operator="sum" />
                         <OperatorCard operator="average" />
                         <OperatorCard operator="median" />
                         <OperatorCard operator="max" />
                         <OperatorCard operator="min" />
-                    </Box>
+                    </div>
                     {groupNames.map(groupName => {
                         let fields = conceptItemGroups.filter(g => g.group == groupName).map(g => g.field);
                         fields = fields.sort((a, b) => {
@@ -228,79 +186,51 @@ export const ConceptShelf: FC<ConceptShelfProps> = function ConceptShelf() {
                         });
                         return <ConceptGroup key={`concept-group-${groupName}`} groupName={groupName} fields={fields} />
                     })}
-                    <Divider orientation="horizontal" textAlign="left" sx={{mt: 1}}></Divider>
-                </Box>
-            </Box>
-        </Box>
+                    <Separator className="mt-2" />
+                </div>
+            </div>
+        </div>
     );
 
-    return <Box sx={{
-        display: 'flex',
-        flexDirection: 'row',
-        flexShrink: 0, // Prevent panel from shrinking
-        width: conceptPanelOpen ? 240 : 32,
-        borderLeft: conceptPanelOpen ? 'none' : '1px solid',
-        borderLeftColor: conceptPanelOpen ? 'transparent' : theme.palette.divider,
-        pl: conceptPanelOpen ? 0 : 1,
-        transition: 'width 0.1s linear', // Smooth transition
-        overflow: 'hidden',
-        position: 'relative',
-    }}>
-        <Tooltip placement="left" title={conceptPanelOpen ? "hide concept panel" : "open concept panel"}>
-            <IconButton 
-                color="primary"
-                sx={conceptPanelOpen ? {
-                    width: 16, 
-                    minWidth: 16,
-                    alignSelf: 'stretch', // Add this to match the height of the ConceptShelf box
-                    borderRadius: 0,
-                    flexShrink: 0,
-                    position: 'relative',
-                    backgroundColor: 'rgba(0,0,0,0.01)'
-                } : {
-                    width: '100%',
-                    minWidth: '100%',
-                    alignSelf: 'stretch', // Add this to match the height of the ConceptShelf box
-                    borderRadius: 0,
-                    flexShrink: 0,
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    zIndex: 10
-                }}
-                onClick={() => setConceptPanelOpen(!conceptPanelOpen)}
+    return (
+        <div className={cn(
+            "flex flex-row shrink-0 overflow-hidden relative transition-[width] duration-100 ease-linear",
+            conceptPanelOpen ? "w-60" : "w-8 border-l border-border pl-2"
+        )}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                            "text-primary rounded-none shrink-0",
+                            conceptPanelOpen 
+                                ? "w-4 min-w-4 self-stretch relative bg-black/5" 
+                                : "w-full min-w-full self-stretch absolute top-0 left-0 right-0 bottom-0 z-10"
+                        )}
+                        onClick={() => setConceptPanelOpen(!conceptPanelOpen)}
+                    >
+                        <div className="flex items-center justify-center z-10 mr-auto">
+                            {conceptPanelOpen 
+                                ? <ChevronRight className="h-[18px] w-[18px]" /> 
+                                : <ChevronLeft className="h-9 w-9 bg-white rounded-full" />
+                            }
+                        </div>
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                    {conceptPanelOpen ? "hide concept panel" : "open concept panel"}
+                </TooltipContent>
+            </Tooltip>
+            <div 
+                onClick={() => !conceptPanelOpen && setConceptPanelOpen(!conceptPanelOpen)}
+                className={cn(
+                    "overflow-hidden",
+                    !conceptPanelOpen && "after:content-[''] after:absolute after:top-0 after:right-0 after:w-full after:h-full after:bg-white/95 after:pointer-events-none after:z-[1]"
+                )}
             >
-                <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 10,
-                    mr: 'auto'
-                }}>
-                    {conceptPanelOpen ?  <ChevronRightIcon sx={{fontSize: 18}} /> 
-                        : <ChevronLeftIcon sx={{fontSize: 36, backgroundColor: 'rgba(255,255,255,1)', borderRadius: '50%'}} />}
-                </Box>
-            </IconButton>
-        </Tooltip>
-        <Box 
-            onClick={() => !conceptPanelOpen && setConceptPanelOpen(!conceptPanelOpen)}
-            sx={{
-                overflow: 'hidden',
-                '&::after': conceptPanelOpen ? undefined : {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    right: 0,
-                    width: '100%',
-                    height: '100%',
-                    background: 'rgba(255,255,255,0.95)',
-                    pointerEvents: 'none',
-                    zIndex: 1
-                },
-        }}>
-            {conceptShelf}
-        </Box>
-    </Box>
+                {conceptShelf}
+            </div>
+        </div>
+    );
 }

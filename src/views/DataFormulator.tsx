@@ -14,23 +14,6 @@ import _ from 'lodash';
 import { Allotment } from "allotment";
 import "allotment/dist/style.css";
 
-import {
-    Typography,
-    Box,
-    Tooltip,
-    Button as MuiButton,
-    Divider,
-    useTheme,
-    alpha,
-} from '@mui/material';
-import {
-    FolderOpen as FolderOpenIcon,
-    ContentPaste as ContentPasteIcon,
-    Category as CategoryIcon,
-    CloudQueue as CloudQueueIcon,
-    AutoFixNormal as AutoFixNormalIcon,
-} from '@mui/icons-material';
-
 import { FreeDataViewFC } from './DataView';
 import { VisualizationViewFC } from './VisualizationView';
 
@@ -56,10 +39,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 // Lucide Icons
-import { Database, FileImage, Clipboard, Upload, Sparkles, ArrowRight, ExternalLink, Play, Zap, BarChart3, LineChart, PieChart, TrendingUp, Layers, Wand2, Bot, ChevronRight } from 'lucide-react';
+import { Database, FileImage, Clipboard, Upload, Sparkles, ArrowRight, ExternalLink, Play, Zap, BarChart3, LineChart, PieChart, TrendingUp, Layers, Wand2, Bot, ChevronRight, FolderOpen, CloudIcon } from 'lucide-react';
+
+// Custom theme hook using CSS variables
+const useAppTheme = () => {
+    return {
+        palette: {
+            primary: { main: 'hsl(var(--primary))' },
+            background: { paper: 'hsl(var(--card))' },
+        }
+    };
+};
 
 export const DataFormulatorFC = ({ }) => {
 
@@ -67,7 +61,7 @@ export const DataFormulatorFC = ({ }) => {
     const models = useSelector((state: DataFormulatorState) => state.models);
     const selectedModelId = useSelector((state: DataFormulatorState) => state.selectedModelId);
     const viewMode = useSelector((state: DataFormulatorState) => state.viewMode);
-    const theme = useTheme();
+    const theme = useAppTheme();
 
     const dispatch = useDispatch();
 
@@ -179,54 +173,27 @@ export const DataFormulatorFC = ({ }) => {
     }, []);
 
     const visPaneMain = (
-        <Box sx={{ width: "100%", overflow: "hidden", display: "flex", flexDirection: "row" }}>
+        <div className="w-full overflow-hidden flex flex-row">
             <VisualizationViewFC />
-        </Box>);
+        </div>);
 
     const visPane = (
-        <Box sx={{width: '100%', height: '100%', 
-            "& .split-view-view:first-of-type": {
-                display: 'flex',
-                overflow: 'hidden',
-        }}}>
+        <div className="w-full h-full [&_.split-view-view:first-of-type]:flex [&_.split-view-view:first-of-type]:overflow-hidden">
             <Allotment vertical>
                 <Allotment.Pane minSize={200} >
                 {visPaneMain}
                 </Allotment.Pane>
                 <Allotment.Pane minSize={120} preferredSize={200}>
-                    <Box className="table-box">
+                    <div className="table-box">
                         <FreeDataViewFC />
-                    </Box>
+                    </div>
                 </Allotment.Pane>
             </Allotment>
-        </Box>);
-
-    let borderBoxStyle = {
-        border: '1px solid rgba(99, 102, 241, 0.1)', 
-        borderRadius: '20px', 
-        background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(249, 250, 251, 0.95) 100%)',
-        boxShadow: '0 4px 24px rgba(99, 102, 241, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04)',
-    }
+        </div>);
 
     const fixedSplitPane = ( 
-        <Box sx={{display: 'flex', flexDirection: 'row', height: '100%', background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)'}}>
-            <Box sx={{
-                ...borderBoxStyle,
-                    margin: '8px 6px 8px 12px',
-                    display: 'flex', height: 'calc(100% - 16px)', width: 'fit-content', flexDirection: 'column',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        height: '4px',
-                        background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7)',
-                        borderRadius: '20px 20px 0 0',
-                    }
-                }}>
+        <div className="flex flex-row h-full bg-gradient-to-b from-slate-50 to-slate-100">
+            <div className="m-2 ml-3 mr-1.5 flex h-[calc(100%-16px)] w-fit flex-col relative overflow-hidden rounded-[20px] border border-indigo-500/10 bg-gradient-to-b from-white/[0.98] to-gray-50/[0.95] shadow-[0_4px_24px_rgba(99,102,241,0.06),0_1px_3px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-gradient-to-r before:from-indigo-500 before:via-violet-500 before:to-purple-500 before:rounded-t-[20px]">
                 {tables.length > 0 ?  <DataThread sx={{
                     minWidth: 220,
                     display: 'flex', 
@@ -236,23 +203,8 @@ export const DataFormulatorFC = ({ }) => {
                     height: '100%',
                     padding: '8px 0 0 0',
                 }}/>  : ""} 
-            </Box>
-            <Box sx={{
-                ...borderBoxStyle,
-                margin: '8px 12px 8px 6px',
-                display: 'flex', height: 'calc(100% - 16px)', flex: 1, overflow: 'hidden', flexDirection: 'row',
-                position: 'relative',
-                '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '4px',
-                    background: 'linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7)',
-                    borderRadius: '20px 20px 0 0',
-                }
-            }}>
+            </div>
+            <div className="m-2 mr-3 ml-1.5 flex h-[calc(100%-16px)] flex-1 overflow-hidden flex-row relative rounded-[20px] border border-indigo-500/10 bg-gradient-to-b from-white/[0.98] to-gray-50/[0.95] shadow-[0_4px_24px_rgba(99,102,241,0.06),0_1px_3px_rgba(0,0,0,0.04)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-1 before:bg-gradient-to-r before:from-indigo-500 before:via-violet-500 before:to-purple-500 before:rounded-t-[20px]">
                 {viewMode === 'editor' ? (
                     <>
                         {visPane}
@@ -261,9 +213,9 @@ export const DataFormulatorFC = ({ }) => {
                 ) : (
                     <ReportView />
                 )}
-            </Box>
+            </div>
             
-        </Box>
+        </div>
     );
 
     let footer = (
@@ -427,11 +379,14 @@ export const DataFormulatorFC = ({ }) => {
     );
     
     return (
-        <Box sx={{ display: 'block', width: "100%", height: 'calc(100% - 54px)', position: 'relative' }}>
+        <div className="block w-full h-[calc(100%-54px)] relative">
             <DndProvider backend={HTML5Backend}>
-                {tables.length > 0 ? fixedSplitPane : dataUploadRequestBox}
-                {selectedModelId == undefined && (
-                    <div className="absolute inset-0 bg-background/90 backdrop-blur-sm flex flex-col z-[1000]">
+                {selectedModelId !== undefined ? (
+                    // Only show content when model is selected
+                    tables.length > 0 ? fixedSplitPane : dataUploadRequestBox
+                ) : (
+                    // Model selection screen - clean full-screen overlay
+                    <div className="flex flex-col h-full w-full bg-background">
                         <div className="flex-1 flex flex-col items-center justify-center text-center pb-20">
                             <img src={dfLogo} alt="Data Formulator" className="w-48 h-48 mb-6" />
                             <h1 className="text-4xl font-light tracking-wider text-foreground mb-2">
@@ -450,5 +405,5 @@ export const DataFormulatorFC = ({ }) => {
                     </div>
                 )}
             </DndProvider>
-        </Box>);
+        </div>);
 }

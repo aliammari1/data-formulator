@@ -2,55 +2,35 @@
 // Licensed under the MIT License.
 
 import React, { FC, useState, useRef, useEffect, memo, useMemo } from 'react';
-import {
-    Box,
-    Button,
-    Typography,
-    Checkbox,
-    IconButton,
-    Card,
-    CardContent,
-    CircularProgress,
-    Alert,
-    Link,
-    Divider,
-    Paper,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    ToggleButton,
-    ToggleButtonGroup,
-    Tooltip,
-    useTheme,
-    alpha,
-} from '@mui/material';
-import Masonry from '@mui/lab/Masonry';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CreateChartifact from '@mui/icons-material/Description';
-import EditIcon from '@mui/icons-material/Edit';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import HistoryIcon from '@mui/icons-material/History';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ShareIcon from '@mui/icons-material/Share';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { ArrowRight, ArrowLeft, FileText, Pencil, HelpCircle, History, Trash2, Share2, CheckCircle, ChevronDown, ChevronUp, TableIcon } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { useDispatch, useSelector } from 'react-redux';
 import { DataFormulatorState, dfActions, dfSelectors, GeneratedReport } from '../app/dfSlice';
 import { Message } from './MessageSnackbar';
 import { getUrls, assembleVegaChart, getTriggers, prepVisTable } from '../app/utils';
-import { MuiMarkdown, getOverrides } from 'mui-markdown';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import embed from 'vega-embed';
 import { getDataTable } from './VisualizationView';
 import { DictTable } from '../components/ComponentType';
 import { AppDispatch } from '../app/store';
-import TableRowsIcon from '@mui/icons-material/TableRows';
-import { Collapse } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import { convertToChartifact, openChartifactViewer } from './ChartifactDialog';
+
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+// Simple spinner component
+const Spinner: FC<{ className?: string }> = ({ className }) => (
+    <div className={cn("animate-spin rounded-full border-2 border-current border-t-transparent", className)} />
+);
 
 // Typography constants
 const FONT_FAMILY_SYSTEM = '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif, "Segoe UI Emoji", "Segoe UI Symbol"';
@@ -75,142 +55,167 @@ const COLOR_EXEC_BORDER = 'rgb(108, 117, 125)';
 const COLOR_EXEC_ACCENT = 'rgb(0, 123, 255)';
 const COLOR_EXEC_BG = 'rgb(248, 249, 250)';
 
+// Markdown component styles using Tailwind classes
+const getMarkdownComponents = (style: string) => {
+    const isNotionStyle = style === 'blog post';
+    const isSocialStyle = style === 'social post' || style === 'short note';
+    const isExecStyle = style === 'executive summary';
 
-const HEADING_BASE = {
-    fontFamily: FONT_FAMILY_SYSTEM,
-    color: COLOR_HEADING,
-    fontWeight: 700,
-    letterSpacing: '-0.01em',
+    return {
+        h1: ({ children }: any) => (
+            <h1 className={cn(
+                "font-bold tracking-tight",
+                isNotionStyle && "text-2xl leading-tight -tracking-wide pb-1 mb-6 mt-8",
+                isSocialStyle && "text-lg leading-tight font-bold mb-3 mt-3",
+                isExecStyle && "text-xl leading-tight font-bold mb-4 mt-5"
+            )} style={{ 
+                fontFamily: isExecStyle ? FONT_FAMILY_SERIF : FONT_FAMILY_SYSTEM,
+                color: isExecStyle ? COLOR_EXEC_HEADING : isSocialStyle ? COLOR_SOCIAL_TEXT : COLOR_HEADING 
+            }}>{children}</h1>
+        ),
+        h2: ({ children }: any) => (
+            <h2 className={cn(
+                "font-bold",
+                isNotionStyle && "text-xl leading-snug pb-1 mb-5 mt-7",
+                isSocialStyle && "text-base leading-tight font-bold mb-2.5 mt-3",
+                isExecStyle && "text-lg leading-snug font-semibold mb-3 mt-4"
+            )} style={{ 
+                fontFamily: isExecStyle ? FONT_FAMILY_SERIF : FONT_FAMILY_SYSTEM,
+                color: isExecStyle ? COLOR_EXEC_HEADING : isSocialStyle ? COLOR_SOCIAL_TEXT : COLOR_HEADING 
+            }}>{children}</h2>
+        ),
+        h3: ({ children }: any) => (
+            <h3 className={cn(
+                "font-semibold",
+                isNotionStyle && "text-lg leading-normal mb-4 mt-6",
+                isSocialStyle && "text-sm leading-snug font-semibold mb-2 mt-2.5",
+                isExecStyle && "text-base leading-normal font-semibold mb-2.5 mt-3"
+            )} style={{ 
+                fontFamily: isExecStyle ? FONT_FAMILY_SERIF : FONT_FAMILY_SYSTEM,
+                color: isExecStyle ? COLOR_EXEC_HEADING : isSocialStyle ? COLOR_SOCIAL_TEXT : COLOR_HEADING 
+            }}>{children}</h3>
+        ),
+        h4: ({ children }: any) => (
+            <h4 className={cn(
+                "font-semibold",
+                isNotionStyle && "text-base leading-normal mb-3 mt-5",
+                isSocialStyle && "text-sm leading-snug font-semibold mb-2 mt-2",
+                isExecStyle && "text-sm leading-normal font-semibold mb-2 mt-3"
+            )} style={{ 
+                fontFamily: isExecStyle ? FONT_FAMILY_SERIF : FONT_FAMILY_SYSTEM,
+                color: isExecStyle ? COLOR_EXEC_HEADING : isSocialStyle ? COLOR_SOCIAL_TEXT : COLOR_HEADING 
+            }}>{children}</h4>
+        ),
+        p: ({ children }: any) => (
+            <p className={cn(
+                isNotionStyle && "text-sm leading-7 mb-3.5",
+                isSocialStyle && "text-sm leading-relaxed mb-1.5",
+                isExecStyle && "text-sm leading-relaxed mb-2.5 text-justify"
+            )} style={{ 
+                fontFamily: isExecStyle ? FONT_FAMILY_SERIF : FONT_FAMILY_SYSTEM,
+                color: isExecStyle ? COLOR_EXEC_TEXT : isSocialStyle ? COLOR_SOCIAL_TEXT : COLOR_BODY 
+            }}>{children}</p>
+        ),
+        a: ({ href, children }: any) => (
+            <a 
+                href={href} 
+                className="text-blue-600 hover:underline font-medium"
+                target="_blank"
+                rel="noopener noreferrer"
+            >{children}</a>
+        ),
+        ul: ({ children }: any) => (
+            <ul className={cn(
+                "list-disc",
+                isNotionStyle && "pl-7 mt-1.5 mb-3",
+                isSocialStyle && "pl-6 mt-1 mb-2",
+                isExecStyle && "pl-6 mt-1 mb-2"
+            )} style={{ fontFamily: isExecStyle ? FONT_FAMILY_SERIF : FONT_FAMILY_SYSTEM }}>{children}</ul>
+        ),
+        ol: ({ children }: any) => (
+            <ol className={cn(
+                "list-decimal",
+                isNotionStyle && "pl-7 mt-1.5 mb-3",
+                isSocialStyle && "pl-6 mt-1 mb-2",
+                isExecStyle && "pl-6 mt-1 mb-2"
+            )} style={{ fontFamily: isExecStyle ? FONT_FAMILY_SERIF : FONT_FAMILY_SYSTEM }}>{children}</ol>
+        ),
+        li: ({ children }: any) => (
+            <li className={cn(
+                isNotionStyle && "text-sm leading-7 mb-1",
+                isSocialStyle && "text-sm leading-relaxed mb-0.5",
+                isExecStyle && "text-sm leading-relaxed mb-0.5"
+            )} style={{ 
+                fontFamily: isExecStyle ? FONT_FAMILY_SERIF : FONT_FAMILY_SYSTEM,
+                color: isExecStyle ? COLOR_EXEC_TEXT : isSocialStyle ? COLOR_SOCIAL_TEXT : COLOR_BODY 
+            }}>{children}</li>
+        ),
+        blockquote: ({ children }: any) => (
+            <blockquote className={cn(
+                "border-l-[3px] pl-5 py-2 my-5 italic",
+                isExecStyle && "border-l-2 pl-4 py-2 my-3"
+            )} style={{ 
+                borderColor: isExecStyle ? COLOR_EXEC_ACCENT : 'rgba(0, 0, 0, 0.15)',
+                fontFamily: isExecStyle ? FONT_FAMILY_SERIF : FONT_FAMILY_SERIF,
+                color: isExecStyle ? COLOR_EXEC_TEXT : COLOR_MUTED,
+                backgroundColor: isExecStyle ? COLOR_EXEC_BG : 'transparent'
+            }}>{children}</blockquote>
+        ),
+        pre: ({ children }: any) => (
+            <pre className={cn(
+                "p-4 rounded overflow-auto my-4 border",
+                isExecStyle && "p-3 my-3"
+            )} style={{ 
+                backgroundColor: isExecStyle ? COLOR_EXEC_BG : COLOR_BG_LIGHT,
+                borderColor: 'rgba(0, 0, 0, 0.08)'
+            }}>{children}</pre>
+        ),
+        code: ({ children }: any) => (
+            <code className={cn(
+                "px-1 py-0.5 rounded text-sm font-medium"
+            )} style={{ 
+                fontFamily: FONT_FAMILY_MONO,
+                backgroundColor: isSocialStyle ? `${COLOR_SOCIAL_ACCENT}1A` : isExecStyle ? COLOR_EXEC_BG : 'rgba(135, 131, 120, 0.15)',
+                color: isSocialStyle ? COLOR_SOCIAL_ACCENT : isExecStyle ? COLOR_EXEC_ACCENT : '#eb5757'
+            }}>{children}</code>
+        ),
+        table: ({ children }: any) => (
+            <div className="my-4 border rounded overflow-hidden">
+                <Table>{children}</Table>
+            </div>
+        ),
+        thead: ({ children }: any) => (
+            <TableHeader style={{ backgroundColor: COLOR_BG_LIGHT }}>{children}</TableHeader>
+        ),
+        tbody: ({ children }: any) => (
+            <TableBody>{children}</TableBody>
+        ),
+        tr: ({ children }: any) => (
+            <TableRow>{children}</TableRow>
+        ),
+        th: ({ children }: any) => (
+            <TableHead className="font-semibold border-b-2 py-3 px-4 text-sm" style={{ fontFamily: FONT_FAMILY_SYSTEM }}>{children}</TableHead>
+        ),
+        td: ({ children }: any) => (
+            <TableCell className="py-3 px-4 border-b text-sm leading-relaxed" style={{ fontFamily: FONT_FAMILY_SYSTEM }}>{children}</TableCell>
+        ),
+        hr: () => (
+            <Separator className="my-6" />
+        ),
+        img: ({ src, alt }: any) => (
+            <img 
+                src={src} 
+                alt={alt || ''} 
+                className={cn(
+                    "object-contain",
+                    isSocialStyle && "w-full max-w-full h-auto max-h-[280px] rounded-lg my-2",
+                    isExecStyle && "max-w-[70%] h-auto rounded my-4",
+                    isNotionStyle && "max-w-[75%] h-auto rounded my-7"
+                )}
+            />
+        ),
+    };
 };
-
-const BODY_TEXT_BASE = {
-    fontFamily: FONT_FAMILY_SYSTEM,
-    fontSize: '0.9375rem',
-    lineHeight: 1.75,
-    fontWeight: 400,
-    letterSpacing: '0.003em',
-    color: COLOR_BODY,
-};
-
-const TABLE_CELL_BASE = {
-    fontFamily: FONT_FAMILY_SYSTEM,
-    fontSize: '0.875rem',
-    py: 1.5,
-    px: 2,
-};
-
-// Notion-style markdown overrides with MUI components
-const notionStyleMarkdownOverrides = {
-    ...getOverrides(),
-    h1: { component: Typography, props: { variant: 'h4', gutterBottom: true, 
-        sx: { ...HEADING_BASE, fontSize: '1.75rem', lineHeight: 1.25, letterSpacing: '-0.02em', pb: 0.5, mb: 3, mt: 4 } } },
-    h2: { component: Typography, props: { variant: 'h5', gutterBottom: true,
-        sx: { ...HEADING_BASE, fontSize: '1.5rem', lineHeight: 1.3, pb: 0.5, mb: 2.5, mt: 3.5 } } },
-    h3: { component: Typography, props: { variant: 'h6', gutterBottom: true,
-        sx: { ...HEADING_BASE, fontWeight: 600, fontSize: '1.25rem', lineHeight: 1.4, letterSpacing: '-0.005em', mb: 2, mt: 3 } } },
-    h4: { component: Typography, props: { variant: 'h6', gutterBottom: true,
-        sx: { ...HEADING_BASE, fontWeight: 600, fontSize: '1.125rem', lineHeight: 1.4, mb: 1.5, mt: 2.5 } } },
-    h5: { component: Typography, props: { variant: 'subtitle1', gutterBottom: true,
-        sx: { ...HEADING_BASE, fontWeight: 600, fontSize: '1rem', lineHeight: 1.5, mb: 1.5, mt: 2 } } },
-    h6: { component: Typography, props: { variant: 'subtitle2', gutterBottom: true,
-        sx: { ...HEADING_BASE, fontWeight: 600, fontSize: '0.9375rem', lineHeight: 1.5, mb: 1.5, mt: 2 } } },
-    p: { component: Typography, props: { variant: 'body2', paragraph: true,
-        sx: { ...BODY_TEXT_BASE, mb: 1.75 } } },
-    a: { component: Link, props: { underline: 'hover' as const, color: 'primary' as const, 
-        sx: { fontSize: 'inherit', fontWeight: 500 } } },
-    ul: { component: 'ul', props: { style: { 
-        paddingLeft: '1.8em', marginTop: '0.75em', marginBottom: '1.5em', fontFamily: FONT_FAMILY_SYSTEM
-    } } },
-    ol: { component: 'ol', props: { style: { 
-        paddingLeft: '1.8em', marginTop: '0.75em', marginBottom: '1.5em', fontFamily: FONT_FAMILY_SYSTEM
-    } } },
-    li: { component: Typography, props: { component: 'li', variant: 'body1',
-        sx: { ...BODY_TEXT_BASE, mb: 0.5 } } },
-    blockquote: { component: Box, props: { sx: { 
-        borderLeft: '3px solid', borderColor: 'rgba(0, 0, 0, 0.15)', pl: 2.5, py: 1, my: 2.5,
-        fontFamily: FONT_FAMILY_SERIF, fontStyle: 'italic', color: COLOR_MUTED, fontSize: '1rem', lineHeight: 1.7 
-    } } },
-    pre: { component: Paper, props: { elevation: 0, sx: { 
-        backgroundColor: COLOR_BG_LIGHT, p: 2, borderRadius: '4px', overflow: 'auto', my: 2, 
-        border: '1px solid', borderColor: 'rgba(0, 0, 0, 0.08)',
-        '& code': { 
-            backgroundColor: 'transparent !important', padding: '0 !important', fontSize: '0.8125rem',
-            fontFamily: FONT_FAMILY_MONO, lineHeight: 1.7, color: COLOR_BODY
-        } 
-    } } },
-    table: { component: TableContainer, props: { component: Paper, elevation: 0,
-        sx: { my: 2, border: '1px solid', borderColor: 'divider' } } },
-    thead: { component: TableHead, props: { sx: { backgroundColor: COLOR_BG_LIGHT } } },
-    tbody: { component: TableBody },
-    tr: { component: TableRow },
-    th: { component: TableCell, props: { sx: { 
-        ...TABLE_CELL_BASE, fontWeight: 600, borderBottom: '2px solid', borderColor: 'divider'
-    } } },
-    td: { component: TableCell, props: { sx: { 
-        ...TABLE_CELL_BASE, borderBottom: '1px solid', borderColor: 'divider', lineHeight: 1.6 
-    } } },
-    hr: { component: Divider, props: { sx: { my: 3 } } }
-} as any;
-
-// Social post style markdown overrides (X/Twitter style)
-const socialStyleMarkdownOverrides = {
-    ...notionStyleMarkdownOverrides,
-    h1: { component: Typography, props: { variant: 'h6', gutterBottom: true, 
-        sx: { fontFamily: FONT_FAMILY_SYSTEM, fontWeight: 700, fontSize: '1.125rem', 
-            lineHeight: 1.25, color: COLOR_SOCIAL_TEXT, mb: 1.5, mt: 1.5 } } },
-    h2: { component: Typography, props: { variant: 'h6', gutterBottom: true,
-        sx: { fontFamily: FONT_FAMILY_SYSTEM, fontWeight: 700, fontSize: '1rem', 
-            lineHeight: 1.25, color: COLOR_SOCIAL_TEXT, mb: 1.25, mt: 1.5 } } },
-    h3: { component: Typography, props: { variant: 'subtitle1', gutterBottom: true,
-        sx: { fontFamily: FONT_FAMILY_SYSTEM, fontWeight: 600, fontSize: '0.9375rem', 
-            lineHeight: 1.3, color: COLOR_SOCIAL_TEXT, mb: 1, mt: 1.25 } } },
-    p: { component: Typography, props: { variant: 'body2', paragraph: true,
-        sx: { fontFamily: FONT_FAMILY_SYSTEM, fontSize: '0.875rem', lineHeight: 1.4, 
-            fontWeight: 400, mb: 0.75, color: COLOR_SOCIAL_TEXT } } },
-    li: { component: Typography, props: { component: 'li', variant: 'body2',
-        sx: { fontFamily: FONT_FAMILY_SYSTEM, fontSize: '0.875rem', lineHeight: 1.4, 
-            fontWeight: 400, mb: 0.25, color: COLOR_SOCIAL_TEXT } } }
-} as any;
-
-// Executive summary style markdown overrides (compact serif styling)
-const executiveSummaryMarkdownOverrides = {
-    ...getOverrides(),
-    h1: { component: Typography, props: { variant: 'h5', gutterBottom: true, 
-        sx: { fontFamily: FONT_FAMILY_SERIF, fontWeight: 700, fontSize: '1.25rem', lineHeight: 1.3, color: COLOR_EXEC_HEADING, mb: 2, mt: 2.5 } } },
-    h2: { component: Typography, props: { variant: 'h6', gutterBottom: true,
-        sx: { fontFamily: FONT_FAMILY_SERIF, fontWeight: 600, fontSize: '1.125rem', lineHeight: 1.3, color: COLOR_EXEC_HEADING, mb: 1.5, mt: 2 } } },
-    h3: { component: Typography, props: { variant: 'h6', gutterBottom: true,
-        sx: { fontFamily: FONT_FAMILY_SERIF, fontWeight: 600, fontSize: '1rem', lineHeight: 1.4, color: COLOR_EXEC_HEADING, mb: 1.25, mt: 1.5 } } },
-    h4: { component: Typography, props: { variant: 'subtitle1', gutterBottom: true,
-        sx: { fontFamily: FONT_FAMILY_SERIF, fontWeight: 600, fontSize: '0.9375rem', lineHeight: 1.4, color: COLOR_EXEC_HEADING, mb: 1, mt: 1.5 } } },
-    p: { component: Typography, props: { variant: 'body2', paragraph: true,
-        sx: { fontFamily: FONT_FAMILY_SERIF, fontSize: '0.875rem', lineHeight: 1.5, fontWeight: 400, color: COLOR_EXEC_TEXT, mb: 1.25, textAlign: 'justify' } } },
-    a: { component: Link, props: { underline: 'hover' as const, color: 'primary' as const, 
-        sx: { fontSize: 'inherit', fontWeight: 500, color: COLOR_EXEC_ACCENT, '&:hover': { color: 'rgb(0, 86, 179)' } } } },
-    ul: { component: 'ul', props: { style: { paddingLeft: '1.5em', marginTop: '0.5em', marginBottom: '1em', fontFamily: FONT_FAMILY_SERIF } } },
-    ol: { component: 'ol', props: { style: { paddingLeft: '1.5em', marginTop: '0.5em', marginBottom: '1em', fontFamily: FONT_FAMILY_SERIF } } },
-    li: { component: Typography, props: { component: 'li', variant: 'body2',
-        sx: { fontFamily: FONT_FAMILY_SERIF, fontSize: '0.875rem', lineHeight: 1.5, fontWeight: 400, color: COLOR_EXEC_TEXT, mb: 0.25 } } },
-    blockquote: { component: Box, props: { sx: { 
-        borderLeft: '2px solid', borderLeftColor: COLOR_EXEC_ACCENT, pl: 2, py: 1, my: 1.5,
-        backgroundColor: COLOR_EXEC_BG, fontFamily: FONT_FAMILY_SERIF, fontStyle: 'italic', color: COLOR_EXEC_TEXT, fontSize: '0.875rem', lineHeight: 1.6
-    } } },
-    pre: { component: Paper, props: { elevation: 0, sx: { 
-        backgroundColor: COLOR_EXEC_BG, p: 1.5, borderRadius: '4px', overflow: 'auto', my: 1.5,
-        '& code': { backgroundColor: 'transparent !important', padding: '0 !important', fontSize: '0.75rem', fontFamily: FONT_FAMILY_MONO, lineHeight: 1.5, color: COLOR_EXEC_TEXT }
-    } } },
-    table: { component: TableContainer, props: { component: Paper, elevation: 0, sx: { my: 1.5, borderRadius: '4px' } } },
-    thead: { component: TableHead, props: { sx: { backgroundColor: COLOR_EXEC_BG } } },
-    tbody: { component: TableBody },
-    tr: { component: TableRow },
-    th: { component: TableCell, props: { sx: { 
-        fontFamily: FONT_FAMILY_SERIF, fontSize: '0.8125rem', py: 1, px: 1.5, fontWeight: 600, borderBottom: '1px solid', borderColor: COLOR_EXEC_BORDER, color: COLOR_EXEC_HEADING
-    } } },
-    td: { component: TableCell, props: { sx: { 
-        fontFamily: FONT_FAMILY_SERIF, fontSize: '0.8125rem', py: 1, px: 1.5, borderBottom: '1px solid', borderColor: COLOR_EXEC_BORDER, lineHeight: 1.5, color: COLOR_EXEC_TEXT
-    } } },
-    hr: { component: Divider, props: { sx: { my: 2, borderColor: COLOR_EXEC_BORDER } } }
-} as any;
 
 export const ReportView: FC = () => {
     // Get all generated reports from Redux state
@@ -224,7 +229,6 @@ export const ReportView: FC = () => {
     const config = useSelector((state: DataFormulatorState) => state.config);
     const allGeneratedReports = useSelector(dfSelectors.getAllGeneratedReports);
     const focusedChartId = useSelector((state: DataFormulatorState) => state.focusedChartId);
-    const theme = useTheme();
 
     const [selectedChartIds, setSelectedChartIds] = useState<Set<string>>(new Set(focusedChartId ? [focusedChartId] : []));
     const [previewImages, setPreviewImages] = useState<Map<string, { url: string; width: number; height: number }>>(new Map());
@@ -416,7 +420,6 @@ export const ReportView: FC = () => {
                 }
             });
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Only cleanup on unmount, not when images change
 
     // Generate preview images for all charts
@@ -745,91 +748,44 @@ export const ReportView: FC = () => {
     displayedReport = processReport(displayedReport);
 
     return (
-        <Box sx={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <TooltipProvider>
+        <div className="h-full w-full flex flex-col overflow-hidden">
             {mode === 'compose' ? (
-                <Box sx={{ overflowY: 'auto', position: 'relative', height: '100%' }}>
-                    <Box sx={{ p: 2, pb: 0, display: 'flex' }}>
+                <div className="overflow-y-auto relative h-full">
+                    <div className="p-4 pb-0 flex">
                         <Button
-                            variant="text"
-                            size="small"
-                            color='secondary'
+                            variant="ghost"
+                            size="sm"
                             onClick={() => dispatch(dfActions.setViewMode('editor'))}
-                            sx={{ textTransform: 'none' }}
-                            startIcon={<ArrowBackIcon />}
+                            className="text-muted-foreground"
                         >
+                            <ArrowLeft className="w-4 h-4 mr-1" />
                             back to explore
                         </Button>
-                        <Divider orientation="vertical" sx={{ mx: 1 }} flexItem />
+                        <Separator orientation="vertical" className="mx-2 h-6" />
                         <Button
-                            variant="text"
+                            variant="ghost"
                             disabled={allGeneratedReports.length === 0}
-                            size="small"
+                            size="sm"
                             onClick={() => setMode('post')}
-                            sx={{ textTransform: 'none' }}
-                            endIcon={<ArrowForwardIcon />}
                         >
                             view reports
+                            <ArrowRight className="w-4 h-4 ml-1" />
                         </Button>
-                    </Box>
+                    </div>
                     {/* Centered Top Bar */}
-                    <Box sx={{
-                        display: 'flex',
-                        justifyContent: 'center',
-                        p: 2,
-                    }}>
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1,
-                                p: 1,
-                                borderRadius: 2,
-                                backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                backdropFilter: 'blur(12px)',
-                                border: '1px solid',
-                                borderColor: 'rgba(0, 0, 0, 0.08)',
-                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-                                '&:hover': {
-                                    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                                    borderColor: 'rgba(0, 0, 0, 0.12)',
-                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                                    transition: 'all 0.2s ease-in-out'
-                                },
-                                '.MuiTypography-root': {
-                                    fontSize: '1rem',
-                                }
-
-                            }}
-                        >
+                    <div className="flex justify-center p-4">
+                        <div className="flex items-center gap-2 p-2 rounded-lg bg-white/90 backdrop-blur-md border border-black/[0.08] shadow-sm hover:bg-white/95 hover:border-black/[0.12] hover:shadow-md transition-all duration-200">
                             {/* Natural Flow */}
-                            <Typography variant="body2" color="text.primary" sx={{ fontWeight: 500 }}>
+                            <span className="text-sm font-medium text-foreground">
                                 Create a
-                            </Typography>
+                            </span>
                             
-                            <ToggleButtonGroup
+                            <ToggleGroup
+                                type="single"
                                 value={style}
-                                exclusive
-                                onChange={(e, newStyle) => newStyle && setStyle(newStyle)}
-                                size="small"
-                                sx={{ 
-                                    '& .MuiToggleButtonGroup-grouped': {
-                                        border: 'none',
-                                        backgroundColor: 'action.hover',
-                                        margin: '0 2px',
-                                        borderRadius: '4px',
-                                        '&:hover': {
-                                            backgroundColor: 'action.selected',
-                                        },
-                                        '&.Mui-selected': {
-                                            backgroundColor: 'primary.main',
-                                            color: 'white',
-                                            '&:hover': {
-                                                backgroundColor: 'primary.dark',
-                                            }
-                                        },
-                                    }
-                                }}
+                                onValueChange={(newStyle) => newStyle && setStyle(newStyle)}
+                                className="gap-0.5"
                             >
                                 {[
                                     { value: 'short note', label: 'short note' },
@@ -837,76 +793,69 @@ export const ReportView: FC = () => {
                                     { value: 'social post', label: 'social post' },
                                     { value: 'executive summary', label: 'executive summary' },
                                 ].map((option) => (
-                                    <ToggleButton 
+                                    <ToggleGroupItem 
                                         key={option.value}
                                         value={option.value}
-                                        sx={{ 
-                                            px: 1,
-                                            py: 0.25,
-                                            textTransform: 'none',
-                                            fontSize: '1rem',
-                                            minWidth: 'auto'
-                                        }}
+                                        className="px-2 py-0.5 text-sm data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                                     >
                                         {option.label}
-                                    </ToggleButton>
+                                    </ToggleGroupItem>
                                 ))}
-                            </ToggleButtonGroup>
+                            </ToggleGroup>
 
-                            <Typography variant="body2" color="text.primary" sx={{ fontWeight: 500 }}>
+                            <span className="text-sm font-medium text-foreground">
                                 from
-                            </Typography>
+                            </span>
                             
-                            <Typography variant="body2" 
-                                color={selectedChartIds.size === 0 ? "warning.main" : 'primary.main'} sx={{ fontWeight: 'bold' }}>
+                            <span className={cn(
+                                "text-sm font-bold",
+                                selectedChartIds.size === 0 ? "text-yellow-600" : "text-primary"
+                            )}>
                                 {selectedChartIds.size}
-                            </Typography>
+                            </span>
                             
-                            <Typography variant="body2" color="text.primary" sx={{ fontWeight: 500 }}>
+                            <span className="text-sm font-medium text-foreground">
                                 {selectedChartIds.size <= 1 ? 'chart' : 'charts'}
-                            </Typography>
+                            </span>
 
                             {/* Generate Button */}
                             <Button
-                                variant="contained"
                                 disabled={isGenerating || selectedChartIds.size === 0}
                                 onClick={generateReport}
-                                size="small"
-                                sx={{
-                                    textTransform: 'none',
-                                    ml: 2,
-                                    px: 2,
-                                    py: 0.75,
-                                    borderRadius: 1.5,
-                                    fontWeight: 500,
-                                    fontSize: '1rem',
-                                    minWidth: 'auto'
-                                }}
-                                startIcon={isGenerating ? <CircularProgress size={14} /> : <EditIcon sx={{ fontSize: 16 }} />}
+                                size="sm"
+                                className="ml-4"
                             >
+                                {isGenerating ? (
+                                    <Spinner className="w-3.5 h-3.5 mr-1.5" />
+                                ) : (
+                                    <Pencil className="w-4 h-4 mr-1.5" />
+                                )}
                                 {isGenerating ? 'composing...' : 'compose'}
                             </Button>
-                        </Paper>
-                    </Box>
+                        </div>
+                    </div>
                     
-                    <Box sx={{ py: 2, px: 6 }}>
+                    <div className="py-4 px-12">
                         {error && (
-                            <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError('')}>
-                                {error}
+                            <Alert variant="destructive" className="mb-4">
+                                <AlertDescription className="flex items-center justify-between">
+                                    {error}
+                                    <button onClick={() => setError('')} className="ml-2 text-sm underline">Dismiss</button>
+                                </AlertDescription>
                             </Alert>
                         )}
 
                         {sortedCharts.length === 0 ? (
-                            <Typography color="text.secondary">
+                            <p className="text-muted-foreground">
                                 No charts available. Create some visualizations first.
-                            </Typography>
+                            </p>
                         ) : isLoadingPreviews ? (
-                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', py: 4 }}>
-                                <CircularProgress size={18} sx={{ color: 'text.secondary' }} />
-                                <Typography sx={{ ml: 2 }} color="text.secondary">
+                            <div className="flex items-center justify-center py-8">
+                                <Spinner className="w-4 h-4 text-muted-foreground" />
+                                <span className="ml-3 text-muted-foreground">
                                     loading chart previews...
-                                </Typography>
-                            </Box>
+                                </span>
+                            </div>
                         ) : (() => {
                             // Filter out unavailable charts (Table, ?, Auto, and charts without preview images)
                             const availableCharts = sortedCharts.filter(chart => {
@@ -919,348 +868,238 @@ export const ReportView: FC = () => {
 
                             if (availableCharts.length === 0) {
                                 return (
-                                    <Typography color="text.secondary">
+                                    <p className="text-muted-foreground">
                                         No available charts to display. Charts may still be loading or unavailable.
-                                    </Typography>
+                                    </p>
                                 );
                             }
 
                             return (
-                                <Masonry columns={{ xs: 2, sm: 3, md: 4, lg: 5 }} spacing={2}>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                                     {availableCharts.map((chart) => {
                                         const table = tables.find(t => t.id === chart.tableRef);
                                         const previewImage = previewImages.get(chart.id);
+                                        const isSelected = selectedChartIds.has(chart.id);
                                         
                                         return (
                                         <Card
                                             key={chart.id}
-                                            variant="outlined"
-                                            sx={{
-                                                cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                                                backgroundColor: selectedChartIds.has(chart.id) ? alpha(theme.palette.primary.main, 0.08) : 'background.paper',
-                                                border:  selectedChartIds.has(chart.id) ? '2px solid' : '1px solid', 
-                                                borderColor: selectedChartIds.has(chart.id) ? 'primary.main' : 'divider',
-                                                '&:hover': { 
-                                                    backgroundColor: 'action.hover', boxShadow: 3,
-                                                    transform: 'translateY(-2px)', transition: 'all 0.2s ease-in-out'
-                                                },
-                                            }}
+                                            className={cn(
+                                                "cursor-pointer relative overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5",
+                                                isSelected 
+                                                    ? "bg-primary/5 border-2 border-primary" 
+                                                    : "bg-background border"
+                                            )}
                                             onClick={() => toggleChartSelection(chart.id)}
                                         >
-                                            <Box sx={{ position: 'relative' }}>
-                                                <Checkbox
-                                                    checked={selectedChartIds.has(chart.id)}
-                                                    onChange={() => toggleChartSelection(chart.id)}
+                                            <div className="relative">
+                                                <div 
+                                                    className="absolute top-1 right-1 z-10 bg-white/90 rounded p-0.5 hover:bg-white"
                                                     onClick={(e) => e.stopPropagation()}
-                                                    sx={{ 
-                                                        position: 'absolute', top: 4, right: 4, p: 0.5, zIndex: 3,
-                                                        backgroundColor: 'rgba(255, 255, 255, 0.9)', borderRadius: 1,
-                                                        '&:hover': { backgroundColor: 'rgba(255, 255, 255, 1)' }
-                                                    }}
-                                                />
-                                                <Box
-                                                    component="img"
+                                                >
+                                                    <Checkbox
+                                                        checked={isSelected}
+                                                        onCheckedChange={() => toggleChartSelection(chart.id)}
+                                                    />
+                                                </div>
+                                                <img
                                                     src={previewImage!.url}
                                                     alt={chart.chartType}
-                                                    sx={{ p: 1, width: `calc(100% - 16px)`, height: 'auto', maxHeight: config.defaultChartHeight, display: 'block', objectFit: 'contain', backgroundColor: 'white' }}
+                                                    className="p-2 w-[calc(100%-16px)] h-auto block object-contain bg-white"
+                                                    style={{ maxHeight: config.defaultChartHeight }}
                                                 />
-                                            </Box>
-                                            <CardContent sx={{ p: 1, '&:last-child': { pb: 1.5 } }}>
-                                                <Typography 
-                                                    variant="caption" 
-                                                    sx={{ display: 'block', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                                                >
+                                            </div>
+                                            <CardContent className="p-2">
+                                                <span className="block font-medium text-xs truncate">
                                                     {chart.chartType}
-                                                </Typography>
+                                                </span>
                                                 {table?.displayId && (
-                                                    <Typography 
-                                                        variant="caption" 
-                                                        color="text.secondary"
-                                                        sx={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                                                    >
+                                                    <span className="block text-xs text-muted-foreground truncate">
                                                         {table.displayId}
-                                                    </Typography>
+                                                    </span>
                                                 )}
                                             </CardContent>
                                         </Card>
                                     );
                                 })}
-                            </Masonry>
+                            </div>
                             );
                         })()}
-                    </Box>
-                </Box>
+                    </div>
+                </div>
             ) : mode === 'post' ? (
-                <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                    <Box sx={{ p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between',  }}>
+                <div className="h-full flex flex-col overflow-hidden">
+                    <div className="p-4 flex items-center justify-between">
                         <Button
-                            size="small"
+                            size="sm"
+                            variant="ghost"
                             disabled={isGenerating}
-                            startIcon={<ArrowBackIcon />}
-                            sx={{ textTransform: 'none' }}
                             onClick={() => setMode('compose')}
                         >
+                            <ArrowLeft className="w-4 h-4 mr-1" />
                             create a new report
                         </Button>
-                        <Typography variant="body2" color="text.secondary">
+                        <span className="text-sm text-muted-foreground">
                             AI generated the post from the selected charts, and it could be inaccurate!
-                        </Typography>
-                    </Box>
-                    <Box sx={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+                        </span>
+                    </div>
+                    <div className="flex-1 flex overflow-hidden relative">
                         {/* Table of Contents Sidebar */}
                         {allGeneratedReports.length > 0 && (
-                            <Box sx={{ 
-                                position: 'absolute',
-                                top: 0,
-                                left: 8,
-                                zIndex: 1,
-                                width: 200,
-                                display: 'flex',
-                                overflowY: 'auto',
-                                flexDirection: 'column',
-                                borderRight: 1,
-                                borderColor: 'divider',
-                                height: 'fit-content',
-                                background: alpha(theme.palette.background.paper, 0.9),
-                            }}>
-                                <Button size='small' color='primary' onClick={() => setHideTableOfContents(!hideTableOfContents)}
-                                sx={{
-                                    width: '100%',
-                                    justifyContent: 'flex-start',
-                                    textAlign: 'left',
-                                    borderRadius: 0,
-                                    textTransform: 'none',
-                                    fontSize: 12,
-                                    py: 1,
-                                    px: 2,
-                                }}>
-                                    {hideTableOfContents ? <ExpandMoreIcon sx={{ fontSize: 16, mr: 1 }} /> 
-                                    : <ExpandLessIcon sx={{ fontSize: 16, mr: 1 }} /> } {hideTableOfContents ? 'show all reports' : 'reports'}
-                                </Button> 
-                                <Collapse in={!hideTableOfContents}>{allGeneratedReports.map((report) => (
-                                    <Box key={report.id} sx={{ position: 'relative' }}>
-                                        <Button
-                                            variant="text"
-                                            size="small"
-                                            color='primary'
-                                            onClick={() => loadReport(report.id)}
-                                            sx={{
-                                                fontSize: 12,
-                                                textTransform: "none",
-                                                width: '100%',
-                                                justifyContent: 'flex-start',
-                                                textAlign: 'left',
-                                                borderRadius: 0,
-                                                py: 1,
-                                                px: 2,
-                                                color: currentReportId === report.id ? 'primary.main' : 'text.secondary',
-                                                borderRight: currentReportId === report.id ? 2 : 0,
-                                                borderColor: 'primary.main',
-                                            }}
+                            <div className="absolute top-0 left-2 z-10 w-[200px] flex overflow-y-auto flex-col border-r h-fit bg-background/90">
+                                <Collapsible open={!hideTableOfContents} onOpenChange={(open) => setHideTableOfContents(!open)}>
+                                    <CollapsibleTrigger asChild>
+                                        <Button 
+                                            size="sm" 
+                                            variant="ghost"
+                                            className="w-full justify-start text-left rounded-none text-xs py-2 px-4"
                                         >
-                                            <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                <Typography 
-                                                    variant="body2" 
-                                                    sx={{ 
-                                                        fontSize: 'inherit',
-                                                        fontWeight: 500, 
-                                                        mb: 0.25
-                                                    }}
-                                                >
-                                                    {report.content.split('\n')[0]}
-                                                </Typography>
-                                                <Typography 
-                                                    variant="caption" 
-                                                    color="text.secondary"
-                                                    sx={{ 
-                                                        fontSize: 10,
-                                                        display: 'block',
-                                                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                                                    }}
-                                                >
-                                                    {new Date(report.createdAt).toLocaleDateString()} • {report.style}
-                                                </Typography>
-                                            </Box>
+                                            {hideTableOfContents ? (
+                                                <ChevronDown className="w-4 h-4 mr-2" />
+                                            ) : (
+                                                <ChevronUp className="w-4 h-4 mr-2" />
+                                            )}
+                                            {hideTableOfContents ? 'show all reports' : 'reports'}
                                         </Button>
-                                        <Tooltip title="Delete report">
-                                            <IconButton
-                                                size="small"
-                                                disabled={isGenerating}
-                                                color='warning'
-                                                onClick={(e) => deleteReport(report.id, e)}
-                                                sx={{ 
-                                                    position: 'absolute',
-                                                    right: 4,
-                                                    top: '50%',
-                                                    transform: 'translateY(-50%)',
-                                                    width: 20,
-                                                    height: 20,
-                                                    '&:hover': { 
-                                                        transform: 'translateY(-50%) scale(1.2)', transition: 'all 0.2s ease-in-out'
-                                                    }
-                                                }}
-                                            >
-                                                <DeleteIcon sx={{ fontSize: 14 }} />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </Box>
-                                ))}
-                                </Collapse>
-                            </Box>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent>
+                                        {allGeneratedReports.map((report) => (
+                                            <div key={report.id} className="relative">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => loadReport(report.id)}
+                                                    className={cn(
+                                                        "text-xs w-full justify-start text-left rounded-none py-2 px-4",
+                                                        currentReportId === report.id 
+                                                            ? "text-primary border-r-2 border-primary" 
+                                                            : "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <div className="flex-1 min-w-0">
+                                                        <span className="block font-medium text-inherit mb-0.5">
+                                                            {report.content.split('\n')[0]}
+                                                        </span>
+                                                        <span className="block text-[10px] text-muted-foreground truncate">
+                                                            {new Date(report.createdAt).toLocaleDateString()} • {report.style}
+                                                        </span>
+                                                    </div>
+                                                </Button>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <button
+                                                            disabled={isGenerating}
+                                                            onClick={(e) => deleteReport(report.id, e)}
+                                                            className="absolute right-1 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-amber-600 hover:text-amber-700 hover:scale-110 transition-all disabled:opacity-50"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>Delete report</TooltipContent>
+                                                </Tooltip>
+                                            </div>
+                                        ))}
+                                    </CollapsibleContent>
+                                </Collapsible>
+                            </div>
                         )}
                         
                         {/* Main Content Area */}
-                        <Box sx={{ flex: 1, overflowY: 'auto', position: 'relative' }}>
+                        <div className="flex-1 overflow-y-auto relative">
                             {/* Action Buttons */}
                             {currentReportId && (
-                                <Box sx={{ position: 'absolute', top: 16, right: 16, zIndex: 10, display: 'flex', gap: 1 }}>
-                                    <Tooltip title="Create Chartifact report">
-                                        <Button
-                                            variant="contained"
-                                            size="small"
-                                            onClick={() => {
-                                                // Convert report to Chartifact markdown format
-                                                const chartifactMarkdown = convertToChartifact(
-                                                    generatedReport,
-                                                    generatedStyle,
-                                                    charts,
-                                                    tables,
-                                                    conceptShelfItems,
-                                                    config
-                                                );
-                                                openChartifactViewer(chartifactMarkdown);
-                                            }}
-                                            sx={{
-                                                textTransform: 'none',
-                                                backgroundColor: 'primary.main',
-                                                color: 'white',
-                                                '&:hover': {
-                                                    backgroundColor: 'primary.dark',
-                                                },
-                                            }}
-                                            startIcon={<CreateChartifact />}
-                                        >
-                                            Create Chartifact
-                                        </Button>
+                                <div className="absolute top-4 right-4 z-10 flex gap-2">
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                size="sm"
+                                                onClick={() => {
+                                                    // Convert report to Chartifact markdown format
+                                                    const chartifactMarkdown = convertToChartifact(
+                                                        generatedReport,
+                                                        generatedStyle,
+                                                        charts,
+                                                        tables,
+                                                        conceptShelfItems,
+                                                        config
+                                                    );
+                                                    openChartifactViewer(chartifactMarkdown);
+                                                }}
+                                            >
+                                                <FileText className="w-4 h-4 mr-1.5" />
+                                                Create Chartifact
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Create Chartifact report</TooltipContent>
                                     </Tooltip>
-                                    <Tooltip title="Share report as image">
-                                        <Button
-                                            variant="contained"
-                                            size="small"
-                                            startIcon={
-                                                shareButtonSuccess ? <CheckCircleIcon /> : <ShareIcon />
-                                            }
-                                            onClick={shareReportAsImage}
-                                            sx={{
-                                                textTransform: 'none',
-                                                backgroundColor: shareButtonSuccess ? 'success.main' : 'primary.main',
-                                                color: 'white',
-                                                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                                                opacity: shareButtonSuccess ? 0.9 : 1,
-                                                transform: shareButtonSuccess ? 'scale(0.98)' : 'scale(1)',
-                                                animation: shareButtonSuccess ? 'pulse 0.6s ease-in-out' : 'none',
-                                                '@keyframes pulse': {
-                                                    '0%': { transform: 'scale(0.98)' },
-                                                    '50%': { transform: 'scale(1.05)' },
-                                                    '100%': { transform: 'scale(0.98)' }
-                                                },
-                                                '&:hover': {
-                                                    backgroundColor: shareButtonSuccess ? 'success.dark' : 'primary.dark',
-                                                },
-                                            }}
-                                        >
-                                            {shareButtonSuccess ? 'Copied!' : 'Share Image'}
-                                        </Button>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button
+                                                size="sm"
+                                                onClick={shareReportAsImage}
+                                                className={cn(
+                                                    "transition-all duration-300",
+                                                    shareButtonSuccess && "bg-green-600 hover:bg-green-700"
+                                                )}
+                                            >
+                                                {shareButtonSuccess ? (
+                                                    <CheckCircle className="w-4 h-4 mr-1.5" />
+                                                ) : (
+                                                    <Share2 className="w-4 h-4 mr-1.5" />
+                                                )}
+                                                {shareButtonSuccess ? 'Copied!' : 'Share Image'}
+                                            </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Share report as image</TooltipContent>
                                     </Tooltip>
-                                </Box>
+                                </div>
                             )}
                             
-                            <Box sx={{ display: 'flex', justifyContent: 'center', width: '100%', py: 3 }}>
-                                <Box
+                            <div className="flex justify-center w-full py-6">
+                                <div
                                     data-report-content
-                                    sx={{
-                                        // Common styles
-                                        width: '100%',
-                                        WebkitFontSmoothing: 'antialiased',
-                                        MozOsxFontSmoothing: 'grayscale',
-                                        '& em': { fontStyle: 'italic' },
-                                        
-                                        // Conditional styles
-                                        ...(generatedStyle === 'social post' || generatedStyle === 'short note' ? {
-                                            maxWidth: '520px', borderRadius: '12px',
-                                            border: '1px solid', borderColor: COLOR_SOCIAL_BORDER, p: 2.5, backgroundColor: 'white',
-                                            fontFamily: FONT_FAMILY_SYSTEM, fontSize: '0.875rem', fontWeight: 400, lineHeight: 1.4,
-                                            color: COLOR_SOCIAL_TEXT,
-                                            '& code': {
-                                                backgroundColor: `${COLOR_SOCIAL_ACCENT}1A`, color: COLOR_SOCIAL_ACCENT,
-                                                padding: '0.1em 0.25em', borderRadius: '3px',
-                                                fontSize: '0.8125rem', fontWeight: 500, fontFamily: FONT_FAMILY_MONO
-                                            },
-                                            '& strong': { fontWeight: 600, color: COLOR_SOCIAL_TEXT },
-                                            '& img': { width: '100%', maxWidth: '100%', height: 'auto', maxHeight: '280px', objectFit: 'contain', borderRadius: '8px', marginTop: '8px', marginBottom: '8px' }
-                                        } : generatedStyle === 'executive summary' ? {
-                                            maxWidth: '700px', p: 2.5, backgroundColor: 'white',
-                                            fontFamily: FONT_FAMILY_SERIF, fontSize: '0.875rem', lineHeight: 1.5, color: COLOR_EXEC_TEXT,
-                                            '& code': { backgroundColor: COLOR_EXEC_BG, color: COLOR_EXEC_ACCENT, padding: '0.1em 0.25em', borderRadius: '2px', fontSize: '0.75rem', fontFamily: FONT_FAMILY_MONO },
-                                            '& strong': { fontWeight: 600, color: COLOR_EXEC_HEADING },
-                                            '& img': { maxWidth: '70%', maxHeight: config.defaultChartHeight * 1.5, objectFit: 'contain', width: 'auto', height: 'auto', borderRadius: '3px', marginTop: '1em', marginBottom: '1em' }
-                                        } : { 
-                                            maxWidth: '800px', px: 6, py: 0, backgroundColor: 'background.paper',
-                                            ...BODY_TEXT_BASE,
-                                            '& code': {
-                                                backgroundColor: 'rgba(135, 131, 120, 0.15)', color: '#eb5757',
-                                                padding: '0.2em 0.4em', borderRadius: '3px',
-                                                fontSize: '0.875rem', fontWeight: 500, fontFamily: FONT_FAMILY_MONO
-                                            },
-                                            '& strong': { fontWeight: 600, color: COLOR_HEADING },
-                                            '& img': {
-                                                maxWidth: '75%', maxHeight: config.defaultChartHeight * 1.5,
-                                                width: 'auto', height: 'auto', objectFit: 'contain', borderRadius: '4px',
-                                                marginTop: '1.75em', marginBottom: '1.75em',
-                                            }
-                                        })
+                                    className={cn(
+                                        "w-full antialiased",
+                                        (generatedStyle === 'social post' || generatedStyle === 'short note') && 
+                                            "max-w-[520px] rounded-xl border p-5 bg-white text-sm font-normal leading-relaxed",
+                                        generatedStyle === 'executive summary' && 
+                                            "max-w-[700px] p-5 bg-white text-sm leading-relaxed",
+                                        (generatedStyle !== 'social post' && generatedStyle !== 'short note' && generatedStyle !== 'executive summary') && 
+                                            "max-w-[800px] px-12 py-0 bg-background text-sm leading-7"
+                                    )}
+                                    style={{
+                                        fontFamily: generatedStyle === 'executive summary' ? FONT_FAMILY_SERIF : FONT_FAMILY_SYSTEM,
+                                        color: generatedStyle === 'executive summary' ? COLOR_EXEC_TEXT : 
+                                               (generatedStyle === 'social post' || generatedStyle === 'short note') ? COLOR_SOCIAL_TEXT : COLOR_BODY,
+                                        borderColor: (generatedStyle === 'social post' || generatedStyle === 'short note') ? COLOR_SOCIAL_BORDER : undefined
                                     }}
                                 >
-                                    <MuiMarkdown overrides={
-                                        generatedStyle === 'social post' || generatedStyle === 'short note' 
-                                            ? socialStyleMarkdownOverrides 
-                                            : generatedStyle === 'executive summary'
-                                            ? executiveSummaryMarkdownOverrides
-                                            : notionStyleMarkdownOverrides
-                                    }>{displayedReport}</MuiMarkdown>
+                                    <ReactMarkdown 
+                                        remarkPlugins={[remarkGfm]}
+                                        components={getMarkdownComponents(generatedStyle)}
+                                    >
+                                        {displayedReport}
+                                    </ReactMarkdown>
                                     
                                     {/* Attribution */}
-                                    <Box sx={{ 
-                                        mt: 3, 
-                                        pt: 2, 
-                                        borderTop: '1px solid #e0e0e0',
-                                        textAlign: 'center',
-                                        fontSize: '0.75rem',
-                                        color: '#666'
-                                    }}>
+                                    <div className="mt-6 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
                                         created with AI using{' '}
-                                        <Link 
+                                        <a 
                                             href="https://github.com/microsoft/data-formulator" 
                                             target="_blank" 
                                             rel="noopener noreferrer"
-                                            sx={{ 
-                                                color: '#1976d2',
-                                                textDecoration: 'none',
-                                                '&:hover': {
-                                                    textDecoration: 'underline'
-                                                }
-                                            }}
+                                            className="text-blue-600 hover:underline"
                                         >
                                             https://github.com/microsoft/data-formulator
-                                        </Link>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </Box>
-                    </Box>
-                </Box>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             ) : null}
-        </Box>
+        </div>
+        </TooltipProvider>
     );
 };
-

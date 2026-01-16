@@ -2,27 +2,29 @@
 // Licensed under the MIT License.
 
 import * as React from 'react';
-import Button from '@mui/material/Button';
-import Snackbar from '@mui/material/Snackbar';
-import IconButton from '@mui/material/IconButton';
-import CloseIcon from '@mui/icons-material/Close';
 import { DataFormulatorState, dfActions } from '../app/dfSlice';
 import { useDispatch, useSelector } from 'react-redux';
-import { Alert, alpha, Box, Chip, Collapse, Divider, Paper, Tooltip, Typography } from '@mui/material';
-import InfoIcon from '@mui/icons-material/Info';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import DeleteIcon from '@mui/icons-material/Delete';
-
-import SignalCellular1BarIcon from '@mui/icons-material/SignalCellular1Bar';
-import SignalCellular2BarIcon from '@mui/icons-material/SignalCellular2Bar';
-import SignalCellular3BarIcon from '@mui/icons-material/SignalCellular3Bar';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import WarningIcon from '@mui/icons-material/Warning';
-import InfoOutlineIcon from '@mui/icons-material/InfoOutline';
-import { useTheme } from '@mui/material/styles';
+import { 
+    X, 
+    Info, 
+    ClipboardList, 
+    Trash2, 
+    ChevronDown, 
+    ChevronUp, 
+    CheckCircle, 
+    AlertCircle, 
+    AlertTriangle, 
+    InfoIcon 
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export interface Message {
     type: "success" | "info" | "error" | "warning",
@@ -34,18 +36,14 @@ export interface Message {
 }
 
 export function MessageSnackbar() {
-    const theme = useTheme();
-  
     const messages = useSelector((state: DataFormulatorState) => state.messages);
     const displayedMessageIdx = useSelector((state: DataFormulatorState) => state.displayedMessageIdx);
     
     const dispatch = useDispatch();
-    const tables = useSelector((state: DataFormulatorState) => state.tables);
 
     const [openLastMessage, setOpenLastMessage] = React.useState(false);
     const [latestMessage, setLatestMessage] = React.useState<Message | undefined>();
 
-    const [openChallenge, setOpenChallenge] = React.useState(true);
     const [openMessages, setOpenMessages] = React.useState(false);
     const [expandedMessages, setExpandedMessages] = React.useState<string[]>([]);
 
@@ -58,8 +56,16 @@ export function MessageSnackbar() {
             setOpenLastMessage(true);
             setLatestMessage(messages[displayedMessageIdx]);
             dispatch(dfActions.setDisplayedMessageIndex(displayedMessageIdx + 1));
+
+            // Auto-close after timeout
+            const timeout = messages[displayedMessageIdx]?.type === "error" ? 20000 : 10000;
+            const timer = setTimeout(() => {
+                setOpenLastMessage(false);
+                setLatestMessage(undefined);
+            }, timeout);
+            return () => clearTimeout(timer);
         }
-    }, [messages])
+    }, [messages, displayedMessageIdx, dispatch])
 
     // Simplified useEffect
     React.useEffect(() => {
@@ -70,8 +76,7 @@ export function MessageSnackbar() {
     }, [messages, openMessages]);
 
     // Original handler for closing auto-popup messages
-    const handleClose = (event: React.SyntheticEvent | Event, reason?: string) => {
-        if (reason === 'clickaway') { return; }
+    const handleClose = () => {
         setOpenLastMessage(false);
         setLatestMessage(undefined);
     };
@@ -83,23 +88,8 @@ export function MessageSnackbar() {
             hour: "2-digit", 
             minute: "2-digit", 
             hour12: false
-            //second: "2-digit" 
         });
     };
-
-    const action = (
-        <React.Fragment>
-            <IconButton
-                size="small"
-                aria-label="close"
-                color="inherit"
-                onClick={handleClose}
-            >
-                <CloseIcon fontSize="small" />
-            </IconButton>
-        </React.Fragment>
-    );
-
 
     const groupedMessages = [];
                             
@@ -127,195 +117,223 @@ export function MessageSnackbar() {
         }
     }
 
+    const getMessageIcon = (type: string) => {
+        switch (type) {
+            case "error":
+                return <AlertCircle className="h-4 w-4 text-destructive" />;
+            case "warning":
+                return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+            case "info":
+                return <InfoIcon className="h-4 w-4 text-blue-500" />;
+            case "success":
+                return <CheckCircle className="h-4 w-4 text-green-500" />;
+            default:
+                return <Info className="h-4 w-4" />;
+        }
+    };
+
+    const getAlertVariant = (type: string): "default" | "destructive" => {
+        return type === "error" ? "destructive" : "default";
+    };
+
     return (
-        <Box sx={{ '& .snackbar-button': {
-            width: 36,
-            height: 36,
-            zIndex: 10,
-            backgroundColor: 'white',
-            '&:hover': {
-                transform: 'scale(1.1)',
-                backgroundColor: 'white',
-            },
-            border: '1px solid',
-            
-            boxShadow: '0 0 10px rgba(0,0,0,0.1)',
-            transition: 'all 0.3s ease'
-        }}}>
-            <Tooltip placement="left" title="view system messages">
-                <IconButton 
-                    className='snackbar-button'
-                    color="warning"
-                    sx={{position: "absolute", bottom: 16, right: 16 }}
-                    onClick={() => setOpenMessages(true)}
-                >
-                    <InfoIcon sx={{fontSize: 32}}/>
-                </IconButton>
-            </Tooltip>
-            <Snackbar
-                open={openMessages}
-                anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
-                sx={{maxWidth: '500px', maxHeight: '70vh'}}
-            >
-                <Paper elevation={3} sx={{
-                    width: '100%',
-                    color: 'text.primary',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    minWidth: '300px',
-                    py: 1,
-                }}>
-                    {/* Header */}
-                    <Box sx={{display: 'flex', alignItems: 'center', px: 1.5}}>
-                        <Typography variant="subtitle1" sx={{fontSize: 12, flexGrow: 1, color: 'text.secondary'}}>
-                            system messages ({messages.length})
-                        </Typography>
-                        <Tooltip title="clear all messages">
-                            <IconButton
-                                size="small"
-                                color="warning"
-                                aria-label="delete"
-                                onClick={() => {
-                                    dispatch(dfActions.clearMessages());
-                                    dispatch(dfActions.setDisplayedMessageIndex(0));
-                                    setOpenMessages(false);
-                                }}
-                            >
-                                <DeleteIcon fontSize="small" />
-                            </IconButton>
-                        </Tooltip>
-                        <IconButton
-                            size="small"
-                            aria-label="close"
-                            onClick={() => setOpenMessages(false)}
-                        >
-                            <CloseIcon fontSize="small" />
-                        </IconButton>
-                    </Box>
-                    <Box 
-                        ref={messagesScrollRef}
-                        sx={{
-                            overflow: 'auto',
-                            flexGrow: 1,
-                            maxHeight: '50vh',
-                            minHeight: '100px',
-                        }}
+        <div>
+            {/* Message Panel Toggle Button */}
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button 
+                        variant="outline"
+                        size="icon"
+                        className="fixed bottom-4 right-4 z-50 h-10 w-10 rounded-full shadow-lg bg-background hover:scale-110 transition-transform border-yellow-500"
+                        onClick={() => setOpenMessages(true)}
                     >
-                        {messages.length == 0 && 
-                        <Typography fontSize={12} component="span" sx={{margin: "auto", m: 1, opacity: 0.7, fontStyle: 'italic'}}>There are no messages yet</Typography>}
-                        {groupedMessages.map((msg, index) => (
-                            <Alert icon={false} key={index} severity={msg.type} sx={{ 
-                                mb: 0.5, py: 0, px: 1,
-                                '& .MuiSvgIcon-root ': {
-                                    height: '16px',
-                                    width: '16px'
-                                },
-                                '& .MuiAlert-message': {
-                                    py: 0.25
-                                },
-                                backgroundColor: 'rgba(255, 255, 255, 0.5)',
-                            } }>
-                                <Box key={`${msg.originalIndex}-${msg.count}`} sx={{ display: 'flex', alignItems: 'center'}}>
-                                    {msg.type == "error" && <ErrorOutlineIcon sx={{fontSize: 16, mr: 0.5, color: 'error.main'}} />}
-                                    {msg.type == "warning" && <WarningIcon sx={{fontSize: 16, mr: 0.5, color: 'warning.main'}} />}
-                                    {msg.type == "info" && <InfoOutlineIcon sx={{fontSize: 16, mr: 0.5, color: 'info.main'}} />}
-                                    {msg.type == "success" && <CheckCircleIcon sx={{fontSize: 16, mr: 0.5, color: 'success.main'}} />}
-                                    <Typography fontSize={11} component="span" >
-                                        [{formatTimestamp(msg.timestamp)}] ({msg.component}) - {msg.value}
-                                    </Typography>
-                                    {msg.count > 1 && (
-                                        <Chip 
-                                            variant="outlined"
-                                            label={`x${msg.count}`}
-                                            color={msg.type === "error" ? "error" : msg.type === "warning" ? "warning" : msg.type === "info" ? "info" : "success"}
-                                            sx={{
-                                                height: '16px',
-                                                fontSize: 10,
-                                                ml: 0.5,
-                                                '& .MuiChip-label': {
-                                                    px: 0.5,
-                                                    py: 0.25
-                                                }
-                                            }}
-                                        />
+                        <Info className="h-6 w-6 text-yellow-500" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">
+                    View system messages
+                </TooltipContent>
+            </Tooltip>
+
+            {/* Messages Panel */}
+            {openMessages && (
+                <div className="fixed bottom-4 right-4 z-50 max-w-[500px] max-h-[70vh]">
+                    <Card className="w-full min-w-[300px] py-2 shadow-lg">
+                        {/* Header */}
+                        <div className="flex items-center px-3">
+                            <span className="text-xs flex-grow text-muted-foreground">
+                                system messages ({messages.length})
+                            </span>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-yellow-500"
+                                        onClick={() => {
+                                            dispatch(dfActions.clearMessages());
+                                            dispatch(dfActions.setDisplayedMessageIndex(0));
+                                            setOpenMessages(false);
+                                        }}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Clear all messages</TooltipContent>
+                            </Tooltip>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => setOpenMessages(false)}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                        
+                        <ScrollArea 
+                            ref={messagesScrollRef}
+                            className="flex-grow max-h-[50vh] min-h-[100px]"
+                        >
+                            {messages.length === 0 && (
+                                <p className="text-xs m-2 opacity-70 italic text-center">
+                                    There are no messages yet
+                                </p>
+                            )}
+                            {groupedMessages.map((msg, index) => (
+                                <div 
+                                    key={index} 
+                                    className={cn(
+                                        "mb-1 py-1 px-2 mx-1 rounded text-xs",
+                                        msg.type === "error" && "bg-destructive/10",
+                                        msg.type === "warning" && "bg-yellow-500/10",
+                                        msg.type === "info" && "bg-blue-500/10",
+                                        msg.type === "success" && "bg-green-500/10"
                                     )}
-                                    {(msg.detail || msg.code) && (!expandedMessages.includes(msg.timestamp.toString()) ? (
-                                        <IconButton sx={{p: 0}} onClick={() => setExpandedMessages([...expandedMessages, msg.timestamp.toString()])}>
-                                            <ExpandMoreIcon sx={{fontSize: 16}} />
-                                        </IconButton>
-                                    ) : (
-                                        <IconButton sx={{p: 0}} onClick={() => setExpandedMessages(expandedMessages.filter(t => t !== msg.timestamp.toString()))}>
-                                            <ExpandLessIcon sx={{fontSize: 16}} />
-                                        </IconButton>
-                                    ))}
-                                </Box>
-                                {(msg.detail || msg.code) && <Collapse sx={{ml: 2}} in={expandedMessages.includes(msg.timestamp.toString())} >
-                                    {msg.detail && (
-                                        <>
-                                            <Divider textAlign="left" sx={{fontSize: 12, opacity: 0.7}}>
-                                                [details]
-                                            </Divider>
-                                            <Box sx={{ borderRadius: 1, position: 'relative' }}>
-                                                <Typography fontSize={12}>{msg.detail}</Typography>
-                                            </Box>
-                                        </>
+                                >
+                                    <div className="flex items-center gap-1">
+                                        {getMessageIcon(msg.type)}
+                                        <span className="text-xs">
+                                            [{formatTimestamp(msg.timestamp)}] ({msg.component}) - {msg.value}
+                                        </span>
+                                        {msg.count > 1 && (
+                                            <Badge 
+                                                variant="outline" 
+                                                className={cn(
+                                                    "h-4 text-[10px] px-1",
+                                                    msg.type === "error" && "border-destructive text-destructive",
+                                                    msg.type === "warning" && "border-yellow-500 text-yellow-500",
+                                                    msg.type === "info" && "border-blue-500 text-blue-500",
+                                                    msg.type === "success" && "border-green-500 text-green-500"
+                                                )}
+                                            >
+                                                x{msg.count}
+                                            </Badge>
+                                        )}
+                                        {(msg.detail || msg.code) && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-5 w-5 p-0"
+                                                onClick={() => {
+                                                    if (expandedMessages.includes(msg.timestamp.toString())) {
+                                                        setExpandedMessages(expandedMessages.filter(t => t !== msg.timestamp.toString()));
+                                                    } else {
+                                                        setExpandedMessages([...expandedMessages, msg.timestamp.toString()]);
+                                                    }
+                                                }}
+                                            >
+                                                {expandedMessages.includes(msg.timestamp.toString()) ? (
+                                                    <ChevronUp className="h-4 w-4" />
+                                                ) : (
+                                                    <ChevronDown className="h-4 w-4" />
+                                                )}
+                                            </Button>
+                                        )}
+                                    </div>
+                                    {(msg.detail || msg.code) && expandedMessages.includes(msg.timestamp.toString()) && (
+                                        <div className="ml-5 mt-1">
+                                            {msg.detail && (
+                                                <>
+                                                    <div className="flex items-center gap-2 text-xs opacity-70">
+                                                        <Separator className="flex-1" />
+                                                        <span>[details]</span>
+                                                        <Separator className="flex-1" />
+                                                    </div>
+                                                    <p className="text-xs mt-1">{msg.detail}</p>
+                                                </>
+                                            )}
+                                            {msg.code && (
+                                                <>
+                                                    <div className="flex items-center gap-2 text-xs opacity-70 my-1">
+                                                        <Separator className="flex-1" />
+                                                        <span>[generated code]</span>
+                                                        <Separator className="flex-1" />
+                                                    </div>
+                                                    <pre className="text-[10px] opacity-70 whitespace-pre-wrap break-words">
+                                                        {msg.code.split('\n').filter(line => line.trim() !== '').join('\n')}
+                                                    </pre>
+                                                </>
+                                            )}
+                                        </div>
                                     )}
-                                    {msg.code && (
-                                        <>
-                                            <Divider textAlign="left" sx={{my: 1, fontSize: 12, opacity: 0.7}}>
-                                                [generated code]
-                                            </Divider>
-                                            <Typography fontSize={10} component="span" sx={{opacity: 0.7}}>
-                                                <pre style={{ 
-                                                    whiteSpace: 'pre-wrap', 
-                                                    wordBreak: 'break-word', 
-                                                    marginTop: 1,
-                                                    fontSize: '10px'
-                                                }}>
-                                                    {msg.code.split('\n').filter(line => line.trim() !== '').join('\n')}
-                                                </pre>
-                                            </Typography>
-                                        </>
-                                    )}
-                                </Collapse>}
-                            </Alert>
-                        ))}
-                    </Box>
-                </Paper>
-            </Snackbar>
+                                </div>
+                            ))}
+                        </ScrollArea>
+                    </Card>
+                </div>
+            )}
             
-            {/* Last message snackbar */}
-            {latestMessage != undefined ? <Snackbar
-                open={openLastMessage}
-                autoHideDuration={latestMessage?.type == "error" ? 20000 : 10000}
-                anchorOrigin={{vertical: 'bottom', horizontal: 'right'}}
-                onClose={handleClose}
-                action={action}
-            >
-                <Alert onClose={handleClose} severity={latestMessage?.type} sx={{ maxWidth: '400px', maxHeight: '600px', overflow: 'auto' }}>
-                    <Typography fontSize={12} component="span" sx={{margin: "auto"}}>
-                        <b>[{formatTimestamp(latestMessage.timestamp)}] ({latestMessage.component})</b> {latestMessage?.value}
-                    </Typography> 
-                    {latestMessage?.detail ? 
-                        <Divider textAlign="left" sx={{my: 1, fontSize: 12, opacity: 0.7}} > [details] </Divider>
-                    : ""}
-                    {latestMessage?.detail ? 
-                        <Box sx={{ borderRadius: 1, position: 'relative' }} >
-                            <Typography fontSize={12} > {latestMessage?.detail} </Typography>
-                        </Box>
-                    : ""}
-                    {latestMessage?.code ? 
-                        <Divider textAlign="left" sx={{my: 1, fontSize: 12, opacity: 0.7}} > [generated code] </Divider>
-                    : ""}
-                    {latestMessage?.code ? 
-                        <Typography fontSize={10} component="span" sx={{margin: "auto", opacity: 0.7}}>
-                            <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', marginTop: 1 }}>
-                                {latestMessage?.code?.split('\n').filter(line => line.trim() !== '').join('\n')}
-                            </pre>
-                        </Typography>
-                    : ""}
-                </Alert>    
-            </Snackbar> : ""}
-        </Box>
+            {/* Last message toast */}
+            {latestMessage && openLastMessage && (
+                <div className="fixed bottom-4 right-4 z-[60] max-w-[400px] max-h-[600px] overflow-auto">
+                    <Alert variant={getAlertVariant(latestMessage.type)} className="shadow-lg">
+                        <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                                {getMessageIcon(latestMessage.type)}
+                                <AlertTitle className="text-xs font-bold">
+                                    [{formatTimestamp(latestMessage.timestamp)}] ({latestMessage.component})
+                                </AlertTitle>
+                                <AlertDescription className="text-xs">
+                                    {latestMessage.value}
+                                </AlertDescription>
+                                
+                                {latestMessage.detail && (
+                                    <>
+                                        <div className="flex items-center gap-2 text-xs opacity-70 my-2">
+                                            <Separator className="flex-1" />
+                                            <span>[details]</span>
+                                            <Separator className="flex-1" />
+                                        </div>
+                                        <p className="text-xs">{latestMessage.detail}</p>
+                                    </>
+                                )}
+                                
+                                {latestMessage.code && (
+                                    <>
+                                        <div className="flex items-center gap-2 text-xs opacity-70 my-2">
+                                            <Separator className="flex-1" />
+                                            <span>[generated code]</span>
+                                            <Separator className="flex-1" />
+                                        </div>
+                                        <pre className="text-[10px] opacity-70 whitespace-pre-wrap break-words">
+                                            {latestMessage.code.split('\n').filter(line => line.trim() !== '').join('\n')}
+                                        </pre>
+                                    </>
+                                )}
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 ml-2"
+                                onClick={handleClose}
+                            >
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </Alert>
+                </div>
+            )}
+        </div>
     );
 }

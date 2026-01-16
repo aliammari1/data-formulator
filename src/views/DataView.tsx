@@ -5,7 +5,8 @@ import React, { FC, useEffect, useMemo } from 'react';
 
 import _ from 'lodash';
 
-import { Typography, Box, Link, Breadcrumbs, useTheme, Fade } from '@mui/material';
+import { TreePine, Anchor, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 import '../scss/DataView.scss';
 
@@ -16,9 +17,6 @@ import { Type } from '../data/types';
 import { createTableFromFromObjectArray } from '../data/utils';
 import { SelectableDataGrid } from './SelectableDataGrid';
 
-import ParkIcon from '@mui/icons-material/Park';
-import AnchorIcon from '@mui/icons-material/Anchor';
-
 export interface FreeDataViewProps {
 }
 
@@ -26,7 +24,6 @@ export const FreeDataViewFC: FC<FreeDataViewProps> = function DataView() {
 
     const dispatch = useDispatch();
     const tables = useSelector((state: DataFormulatorState) => state.tables);
-    const theme = useTheme();
     
     const conceptShelfItems = useSelector((state: DataFormulatorState) => state.conceptShelfItems);
     const focusedTableId = useSelector((state: DataFormulatorState) => state.focusedTableId);
@@ -88,7 +85,7 @@ export const FreeDataViewFC: FC<FreeDataViewProps> = function DataView() {
                 minWidth, 
                 width, 
                 align: undefined, 
-                format: (value: any) => <Typography fontSize="inherit">{`${value}`}</Typography>, 
+                format: (value: any) => <span className="text-inherit">{`${value}`}</span>, 
                 dataType: targetTable?.metadata[name].type as Type,
                 source: conceptShelfItems.find(f => f.name == name)?.source || "original", 
             };
@@ -97,24 +94,25 @@ export const FreeDataViewFC: FC<FreeDataViewProps> = function DataView() {
         if (colDefs && !targetTable?.virtual) {
             colDefs = [{
                 id: "#rowId", label: "#", minWidth: 10, align: undefined, width: 40,
-                format: (value: any) => <Typography fontSize="inherit" color="rgba(0,0,0,0.65)">{value}</Typography>, 
+                format: (value: any) => <span className="text-black/65">{value}</span>, 
                 dataType: Type.Number,
                 source: "original", 
             }, ...colDefs]
         }
 
-        return  <Fade in={true} timeout={600} key={targetTable?.id}>
-            <Box sx={{height: 'calc(100% - 28px)'}}>
-                <SelectableDataGrid
-                    tableId={targetTable?.id || ""}
-                    tableName={targetTable?.displayId || targetTable?.id || "table"} 
-                    rows={rowData} 
-                    columnDefs={colDefs}
-                    rowCount={targetTable?.virtual?.rowCount || targetTable?.rows.length || 0}
-                    virtual={targetTable?.virtual ? true : false}
-                />
-            </Box>
-        </Fade>
+        return  <div 
+            key={targetTable?.id}
+            className="h-[calc(100%-28px)] animate-in fade-in duration-500"
+        >
+            <SelectableDataGrid
+                tableId={targetTable?.id || ""}
+                tableName={targetTable?.displayId || targetTable?.id || "table"} 
+                rows={rowData} 
+                columnDefs={colDefs}
+                rowCount={targetTable?.virtual?.rowCount || targetTable?.rows.length || 0}
+                virtual={targetTable?.virtual ? true : false}
+            />
+        </div>
     }
 
 
@@ -153,20 +151,28 @@ export const FreeDataViewFC: FC<FreeDataViewProps> = function DataView() {
     const predecessorTables = getPredecessors(chartTableId);
 
     let genTableLink =  (t: DictTable) => 
-        <Link underline="hover" key={t.id} sx={{cursor: "pointer"}} 
-            color={theme.palette.primary.main} onClick={()=>{ dispatch(dfActions.setFocusedTable(t.id)) }}>
-            <Typography sx={{fontWeight: t.id === focusedTableId ? "bold" : "inherit", fontSize: 'inherit'}} component='span'>{t.displayId || t.id}</Typography>
-        </Link>;
+        <button 
+            key={t.id} 
+            className="cursor-pointer text-primary hover:underline bg-transparent border-none p-0"
+            onClick={()=>{ dispatch(dfActions.setFocusedTable(t.id)) }}
+        >
+            <span className={cn("text-inherit", t.id === focusedTableId && "font-bold")}>{t.displayId || t.id}</span>
+        </button>;
 
     return (
-        <Box sx={{height: "100%", display: "flex", flexDirection: "column", background: "rgba(0,0,0,0.02)"}}>
+        <div className="h-full flex flex-col bg-black/2">
 
-            <Box sx={{display: 'flex', alignItems: 'center'}}>
-                <Breadcrumbs sx={{fontSize: "12px", margin: "4px 12px"}} separator="›" aria-label="breadcrumb">
-                    {predecessorTables.map(t => genTableLink(t))}
-                </Breadcrumbs>
-            </Box>
+            <div className="flex items-center">
+                <nav className="text-xs mx-3 my-1 flex items-center gap-1" aria-label="breadcrumb">
+                    {predecessorTables.map((t, index) => (
+                        <React.Fragment key={t.id}>
+                            {index > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+                            {genTableLink(t)}
+                        </React.Fragment>
+                    ))}
+                </nav>
+            </div>
             {renderTableBody(tables.find(t => t.id == focusedTableId))}
-        </Box>
+        </div>
     );
 }

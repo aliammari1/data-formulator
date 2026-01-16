@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { FC, useEffect, useState } from 'react'
+import { FC, useState } from 'react'
 import { useDrag } from 'react-dnd'
 import { useSelector, useDispatch } from 'react-redux'
 
@@ -9,56 +9,30 @@ import '../scss/ConceptShelf.scss';
 
 import 'prismjs/components/prism-python' // Language
 import 'prismjs/themes/prism.css'; //Example style, you can use another
-import { useTheme } from '@mui/material/styles';
 
-import {
-    Card,
-    Box,
-    Typography,
-    IconButton,
-    TextField,
-    Tooltip,
-    LinearProgress,
-    SxProps,
-} from '@mui/material';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
-import ForkRightIcon from '@mui/icons-material/ForkRight';
-import ZoomInIcon from '@mui/icons-material/ZoomIn';
-import HideSourceIcon from '@mui/icons-material/HideSource';
-import ArrowRightIcon from '@mui/icons-material/ArrowRight';
-import AnimateHeight from 'react-animate-height';
+import { Trash2, ArrowRight } from 'lucide-react';
 
-import { FieldItem, ConceptTransformation, duplicateField, FieldSource } from '../components/ComponentType';
+import { FieldItem } from '../components/ComponentType';
 
-import {  testType, Type, TypeList } from "../data/types";
 import React from 'react';
-import { DataFormulatorState, dfActions, dfSelectors } from '../app/dfSlice';
+import { DataFormulatorState, dfActions } from '../app/dfSlice';
 
-import { getUrls } from '../app/utils';
 import { getIconFromType } from './ViewUtils';
 
-
-import _ from 'lodash';
-import { DictTable } from '../components/ComponentType';
-import { CodeBox } from './VisualizationView';
-import { CustomReactTable } from './ReactTable';
-import { alpha } from '@mui/material/styles';
+import { cn } from '@/lib/utils';
 
 export interface ConceptCardProps {
     field: FieldItem,
-    sx?: SxProps
+    className?: string
 }
 
-
-
-export const ConceptCard: FC<ConceptCardProps> = function ConceptCard({ field, sx }) {
+export const ConceptCard: FC<ConceptCardProps> = function ConceptCard({ field, className }) {
     // concept cards are draggable cards that can be dropped into encoding shelf
-    let theme = useTheme();
 
-    const conceptShelfItems = useSelector((state: DataFormulatorState) => state.conceptShelfItems);
     const tables = useSelector((state: DataFormulatorState) => state.tables);
     let focusedTableId = useSelector((state: DataFormulatorState) => state.focusedTableId);
     
@@ -68,7 +42,6 @@ export const ConceptCard: FC<ConceptCardProps> = function ConceptCard({ field, s
 
     const dispatch = useDispatch();
     let handleDeleteConcept = (conceptID: string) => dispatch(dfActions.deleteConceptItemByID(conceptID));
-    let handleUpdateConcept = (concept: FieldItem) => dispatch(dfActions.updateConceptItems(concept));
 
     const [{ isDragging }, drag] = useDrag(() => ({
         type: "concept-card",
@@ -80,81 +53,97 @@ export const ConceptCard: FC<ConceptCardProps> = function ConceptCard({ field, s
     }));
 
     let [isLoading, setIsLoading] = useState(false);
-    let handleLoading = (loading: boolean) => {
-        setIsLoading(loading);
-    }
-    
-    let opacity = isDragging ? 0.3 : 1;
-    let fontStyle = "inherit";
-    let border = "hidden";
 
-    const cursorStyle = isDragging ? "grabbing" : "grab";
+    const cursorStyle = isDragging ? "cursor-grabbing" : "cursor-grab";
 
-    let deleteOption = !(field.source == "original") && <IconButton size="small"
+    let deleteOption = !(field.source == "original") && (
+        <Button
             key="delete-icon-button"
-            color="primary" aria-label="Delete" component="span"
-            onClick={() => { handleDeleteConcept(field.id); }}>
-            <DeleteIcon fontSize="inherit" />
-        </IconButton>;
+            variant="ghost"
+            size="icon"
+            className="h-5 w-5 text-primary hover:text-primary"
+            aria-label="Delete"
+            onClick={() => { handleDeleteConcept(field.id); }}
+        >
+            <Trash2 className="h-3 w-3" />
+        </Button>
+    );
 
     let cardHeaderOptions = [
         deleteOption,
     ]
 
     let typeIcon = (
-        <Typography sx={{ fontSize: "inherit", display: "flex", alignItems: "center", verticalAlign: "middle" }} component={'span'}>
+        <span className="text-inherit flex items-center align-middle">
             {getIconFromType(focusedTable?.metadata[field.name]?.type)}
-        </Typography>
+        </span>
     )
 
-    let fieldNameEntry = field.name != "" ? <Typography sx={{
-        fontSize: "inherit", marginLeft: "3px", whiteSpace: "nowrap",
-        overflow: "hidden", textOverflow: "ellipsis", flexShrink: 1
-    }}>{field.name}</Typography>
-        : <Typography sx={{ fontSize: 12, marginLeft: "3px", color: "gray", fontStyle: "italic" }}>new concept</Typography>;
+    let fieldNameEntry = field.name != "" ? (
+        <span className="text-inherit ml-[3px] whitespace-nowrap overflow-hidden text-ellipsis shrink">
+            {field.name}
+        </span>
+    ) : (
+        <span className="text-xs ml-[3px] text-gray-500 italic">new concept</span>
+    );
 
-    let backgroundColor = theme.palette.primary.main;
+    // Background color based on field source
+    let bgColorClass = 'bg-primary';
     if (field.source == "original") {
-        backgroundColor = theme.palette.primary.light;
+        bgColorClass = 'bg-primary/70';
     } else if (field.source == "custom") {
-        backgroundColor = theme.palette.custom.main;
+        bgColorClass = 'bg-purple-500';
     } else if (field.source == "derived") {
-        backgroundColor = theme.palette.derived.main;
+        bgColorClass = 'bg-amber-500';
     }
 
-    let draggleCardHeaderBgOverlay = 'rgba(255, 255, 255, 0.9)';
+    let draggleCardHeaderBgOverlay = 'bg-white/90';
 
     // Add subtle tint for non-focused fields
     if (focusedTable && !focusedTable.names.includes(field.name)) {
-        draggleCardHeaderBgOverlay = 'rgba(255, 255, 255, 1)';
+        draggleCardHeaderBgOverlay = 'bg-white';
     }
 
-    let boxShadow = editMode ? "0 2px 4px 0 rgb(0 0 0 / 20%), 0 2px 4px 0 rgb(0 0 0 / 19%)" : "";
-
     let cardComponent = (
-        <Card sx={{ minWidth: 60, backgroundColor, position: "relative", ...sx }}
-            variant="outlined"
-            style={{ opacity, border, boxShadow, fontStyle, marginLeft: '3px' }}
-            color="secondary"
-            className={`data-field-list-item draggable-card`}>
-            {isLoading ? <Box sx={{ position: "absolute", zIndex: 20, height: "100%", width: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <LinearProgress sx={{ width: "100%", height: "100%", opacity: 0.2 }} />
-            </Box> : ""}
-            <Box ref={field.name ? drag : undefined} sx={{ cursor: cursorStyle, background: draggleCardHeaderBgOverlay }}
-                 className={`draggable-card-header draggable-card-inner ${field.source}`}>
-                <Typography className="draggable-card-title" color="text.primary"
-                    sx={{ fontSize: 12, height: 24, width: "100%"}} component={'span'} gutterBottom>
+        <Card 
+            className={cn(
+                "min-w-[60px] relative ml-[3px] data-field-list-item draggable-card",
+                bgColorClass,
+                isDragging ? "opacity-30" : "opacity-100",
+                editMode ? "shadow-md" : "",
+                className
+            )}
+            style={{ border: 'hidden', fontStyle: 'inherit' }}
+        >
+            {isLoading && (
+                <div className="absolute z-20 h-full w-full flex items-center justify-center">
+                    <Progress value={50} className="w-full h-full opacity-20" />
+                </div>
+            )}
+            <div 
+                ref={field.name ? drag : undefined} 
+                className={cn(
+                    cursorStyle,
+                    draggleCardHeaderBgOverlay,
+                    `draggable-card-header draggable-card-inner ${field.source}`
+                )}
+            >
+                <span 
+                    className="draggable-card-title text-foreground text-xs h-6 w-full flex items-center"
+                >
                     {typeIcon}
                     {fieldNameEntry}
-                    {focusedTable?.metadata[field.name]?.semanticType ? 
-                        <Typography sx={{fontSize: "xx-small", color: "text.secondary", marginLeft: "6px", fontStyle: 'italic', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
-                            <ArrowRightIcon sx={{fontSize: "12px"}} /> {focusedTable?.metadata[field.name].semanticType}</Typography> : ""}
-                </Typography>
+                    {focusedTable?.metadata[field.name]?.semanticType && (
+                        <span className="text-[10px] text-muted-foreground ml-1.5 italic whitespace-nowrap flex items-center">
+                            <ArrowRight className="h-3 w-3" /> {focusedTable?.metadata[field.name].semanticType}
+                        </span>
+                    )}
+                </span>
                 
-                <Box sx={{ position: "absolute", right: 0, display: "flex", flexDirection: "row", alignItems: "center" }}>
-                    <Box className='draggable-card-action-button' sx={{ background: 'rgba(255, 255, 255, 0.95)'}}>{cardHeaderOptions}</Box>
-                </Box>
-            </Box>
+                <div className="absolute right-0 flex flex-row items-center">
+                    <div className='draggable-card-action-button bg-white/95'>{cardHeaderOptions}</div>
+                </div>
+            </div>
         </Card>
     )
 

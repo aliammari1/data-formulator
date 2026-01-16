@@ -1,52 +1,18 @@
 // TableManager.tsx
 import React, { useState, useEffect, FC } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  Typography, 
-  Button, 
-  Grid,
-  Box,
-  IconButton,
-  Paper,
-  Tabs,
-  Tab,
-  TextField,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  Divider,
-  SxProps,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  CircularProgress,
-  ButtonGroup,
-  Tooltip,
-  MenuItem,
-  Chip,
-  Collapse,
-  styled,
-  ToggleButtonGroup,
-  ToggleButton,
-  useTheme,
-  Link,
-  Checkbox
-} from '@mui/material';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
-import DeleteIcon from '@mui/icons-material/Delete';
-import CloseIcon from '@mui/icons-material/Close';
-import AnalyticsIcon from '@mui/icons-material/Analytics';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import TableRowsIcon from '@mui/icons-material/TableRows';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import SearchIcon from '@mui/icons-material/Search';
+import { Trash2, X, BarChart3, ChevronUp, ChevronDown, Table2, RefreshCw, ArrowRight, Search, Bot, Check, Eraser, Loader2 } from 'lucide-react';
 
 import { getUrls } from '../app/utils';
 import { CustomReactTable } from './ReactTable';
@@ -54,7 +20,6 @@ import { DictTable } from '../components/ComponentType';
 import { Type } from '../data/types';
 import { useDispatch, useSelector } from 'react-redux';
 import { dfActions, dfSelectors, getSessionId } from '../app/dfSlice';
-import { alpha } from '@mui/material';
 import { DataFormulatorState } from '../app/dfSlice';
 import { fetchFieldSemanticType } from '../app/dfSlice';
 import { AppDispatch } from '../app/store';
@@ -64,10 +29,6 @@ import Markdown from 'markdown-to-jsx';
 import Prism from 'prismjs'
 import 'prismjs/components/prism-javascript' // Language
 import 'prismjs/themes/prism.css'; //Example style, you can use another
-import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
-import CheckIcon from '@mui/icons-material/Check';
-import MuiMarkdown from 'mui-markdown';
-import CleaningServicesIcon from '@mui/icons-material/CleaningServices';
 
 export const handleDBDownload = async (sessionId: string) => {
     try {
@@ -134,81 +95,51 @@ interface TableStatisticsViewProps {
 export class TableStatisticsView extends React.Component<TableStatisticsViewProps> {
     render() {
         const { tableName, columnStats } = this.props;
-
-        // Common styles for header cells
-        const headerCellStyle = {
-            backgroundColor: '#fff',
-            fontSize: 10,
-            color: "#333",
-            borderBottomColor: (theme: any) => theme.palette.primary.main,
-            borderBottomWidth: '1px',
-            borderBottomStyle: 'solid',
-            padding: '6px' 
-        };
-        
-        // Common styles for body cells
-        const bodyCellStyle = { 
-            fontSize: 10, 
-            padding: '6px' 
-        };
         
         return (
-            <Box sx={{ 
-                height: '310px',  // Match the table container height from CustomReactTable
-                display: 'flex', 
-                flexDirection: 'column' 
-            }}>
-                <TableContainer sx={{ 
-                    flex: 1, 
-                    maxHeight: '310px',  // Adjust to account for the header
-                    overflow: 'auto' 
-                }}>
-                    <Table size="small" stickyHeader>
-                        <TableHead>
+            <div className="h-[310px] flex flex-col">
+                <ScrollArea className="flex-1 max-h-[310px]">
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell sx={{...headerCellStyle, backgroundColor: "#f7f7f7", fontWeight: "bold"}}>Column</TableCell>
-                                <TableCell sx={headerCellStyle}>Type</TableCell>
-                                <TableCell align="right" sx={headerCellStyle}>Count</TableCell>
-                                <TableCell align="right" sx={headerCellStyle}>Unique</TableCell>
-                                <TableCell align="right" sx={headerCellStyle}>Null</TableCell>
-                                <TableCell align="right" sx={headerCellStyle}>Min</TableCell>
-                                <TableCell align="right" sx={headerCellStyle}>Max</TableCell>
-                                <TableCell align="right" sx={headerCellStyle}>Avg</TableCell>
+                                <TableHead className="bg-gray-100 text-[10px] text-gray-700 font-bold p-1.5 border-b border-primary">Column</TableHead>
+                                <TableHead className="bg-white text-[10px] text-gray-700 p-1.5 border-b border-primary">Type</TableHead>
+                                <TableHead className="bg-white text-[10px] text-gray-700 p-1.5 border-b border-primary text-right">Count</TableHead>
+                                <TableHead className="bg-white text-[10px] text-gray-700 p-1.5 border-b border-primary text-right">Unique</TableHead>
+                                <TableHead className="bg-white text-[10px] text-gray-700 p-1.5 border-b border-primary text-right">Null</TableHead>
+                                <TableHead className="bg-white text-[10px] text-gray-700 p-1.5 border-b border-primary text-right">Min</TableHead>
+                                <TableHead className="bg-white text-[10px] text-gray-700 p-1.5 border-b border-primary text-right">Max</TableHead>
+                                <TableHead className="bg-white text-[10px] text-gray-700 p-1.5 border-b border-primary text-right">Avg</TableHead>
                             </TableRow>
-                        </TableHead>
+                        </TableHeader>
                         <TableBody>
                             {columnStats.map((stat, idx) => (
                                 <TableRow 
                                     key={stat.column} 
-                                    hover
-                                    sx={{ }}
+                                    className="hover:bg-muted/50"
                                 >
-                                    <TableCell 
-                                        component="th" 
-                                        scope="row" 
-                                        sx={{...bodyCellStyle, fontWeight: "bold", backgroundColor: "#f7f7f7"}}
-                                    >
+                                    <TableCell className="text-[10px] font-bold bg-gray-100 p-1.5">
                                         {stat.column}
                                     </TableCell>
-                                    <TableCell sx={bodyCellStyle}>
+                                    <TableCell className="text-[10px] p-1.5">
                                         {stat.type}
                                     </TableCell>
-                                    <TableCell align="right" sx={bodyCellStyle}>
+                                    <TableCell className="text-[10px] p-1.5 text-right">
                                         {stat.statistics.count}
                                     </TableCell>
-                                    <TableCell align="right" sx={bodyCellStyle}>
+                                    <TableCell className="text-[10px] p-1.5 text-right">
                                         {stat.statistics.unique_count}
                                     </TableCell>
-                                    <TableCell align="right" sx={bodyCellStyle}>
+                                    <TableCell className="text-[10px] p-1.5 text-right">
                                         {stat.statistics.null_count}
                                     </TableCell>
-                                    <TableCell align="right" sx={bodyCellStyle}>
+                                    <TableCell className="text-[10px] p-1.5 text-right">
                                         {stat.statistics.min !== undefined ? stat.statistics.min : '-'}
                                     </TableCell>
-                                    <TableCell align="right" sx={bodyCellStyle}>
+                                    <TableCell className="text-[10px] p-1.5 text-right">
                                         {stat.statistics.max !== undefined ? stat.statistics.max : '-'}
                                     </TableCell>
-                                    <TableCell align="right" sx={bodyCellStyle}>
+                                    <TableCell className="text-[10px] p-1.5 text-right">
                                         {stat.statistics.avg !== undefined ? 
                                             Number(stat.statistics.avg).toFixed(2) : '-'}
                                     </TableCell>
@@ -216,28 +147,26 @@ export class TableStatisticsView extends React.Component<TableStatisticsViewProp
                             ))}
                         </TableBody>
                     </Table>
-                </TableContainer>
-            </Box>
+                </ScrollArea>
+            </div>
         );
     }
 }
 
 export const DBTableSelectionDialog: React.FC<{ 
     buttonElement?: any, 
-    sx?: SxProps,
+    className?: string,
     onOpen?: () => void,
     // Controlled mode props
     open?: boolean,
     onClose?: () => void
 }> = function DBTableSelectionDialog({ 
     buttonElement,
-    sx,
+    className,
     onOpen,
     open: controlledOpen,
     onClose,
 }) {
-    
-    const theme = useTheme();
 
     const dispatch = useDispatch<AppDispatch>();
     const sessionId = useSelector((state: DataFormulatorState) => state.sessionId);
@@ -556,263 +485,223 @@ export const DBTableSelectionDialog: React.FC<{
     }, [tableDialogOpen]);
 
     let importButton = (buttonElement: React.ReactNode) => {
-        return <Tooltip title="import a duckdb .db file to the local database">
-            <span>
-                <Button variant="text" sx={{fontSize: "inherit", minWidth: "auto"}} component="label" disabled={isUploading}>
-                    {buttonElement}
-                    <input type="file" hidden onChange={handleDBUpload} accept=".db" disabled={isUploading} />
-                </Button>
-            </span>
-        </Tooltip>
+        return <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span>
+                        <Button variant="ghost" className="text-inherit min-w-0 h-auto p-0" asChild disabled={isUploading}>
+                            <label>
+                                {buttonElement}
+                                <input type="file" hidden onChange={handleDBUpload} accept=".db" disabled={isUploading} />
+                            </label>
+                        </Button>
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent>import a duckdb .db file to the local database</TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     }
 
     let exportButton = 
-        <Tooltip title="save the local database to a duckdb .db file">
-            <span>
-                <Button variant="text" size="small" onClick={() => {
-                    handleDBDownload(sessionId ?? '')
-                        .catch(error => {
-                            console.error('Failed to download database:', error);
-                            setSystemMessage('Failed to download database file', "error");
-                        });
-                }} disabled={isUploading || dbTables.length === 0}>
-                    export
-                </Button>
-            </span>
-        </Tooltip>
-
-    function uploadFileButton(element: React.ReactNode, buttonSx?: SxProps) {
-        return (
-            <Tooltip title="upload a csv/tsv file to the local database">
-                <span>
-                    <Button
-                        variant="text"
-                        component="label"
-                        sx={{ fontSize: "inherit", ...buttonSx}}                    
-                        disabled={isUploading}
-                    >
-                        {element}
-                        <input
-                            type="file"
-                            hidden
-                            onChange={handleDBFileUpload}
-                            accept=".csv,.xlsx,.json"
-                            disabled={isUploading}
-                        />
-                    </Button>
-                </span>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <span>
+                        <Button variant="ghost" size="sm" onClick={() => {
+                            handleDBDownload(sessionId ?? '')
+                                .catch(error => {
+                                    console.error('Failed to download database:', error);
+                                    setSystemMessage('Failed to download database file', "error");
+                                });
+                        }} disabled={isUploading || dbTables.length === 0}>
+                            export
+                        </Button>
+                    </span>
+                </TooltipTrigger>
+                <TooltipContent>save the local database to a duckdb .db file</TooltipContent>
             </Tooltip>
+        </TooltipProvider>
+
+    function uploadFileButton(element: React.ReactNode, buttonClassName?: string) {
+        return (
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <span>
+                            <Button
+                                variant="ghost"
+                                className={cn("text-inherit", buttonClassName)}
+                                asChild
+                                disabled={isUploading}
+                            >
+                                <label>
+                                    {element}
+                                    <input
+                                        type="file"
+                                        hidden
+                                        onChange={handleDBFileUpload}
+                                        accept=".csv,.xlsx,.json"
+                                        disabled={isUploading}
+                                    />
+                                </label>
+                            </Button>
+                        </span>
+                    </TooltipTrigger>
+                    <TooltipContent>upload a csv/tsv file to the local database</TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
         );
     }
 
     let hasDerivedViews = dbTables.filter(t => t.view_source !== null).length > 0;
 
-    let dataLoaderPanel = <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', backgroundColor: alpha(theme.palette.secondary.main, 0.02) }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', px: 1, mb: 1 }}>
-            <Typography variant="caption" sx={{
-                color: "text.disabled", 
-                fontWeight: "500", 
-                flexGrow: 1,
-                fontSize: "0.75rem",
-            }}>
+    let dataLoaderPanel = <div className="p-2 flex flex-col bg-secondary/5">
+        <div className="flex items-center px-2 mb-2">
+            <span className="text-muted-foreground font-medium flex-grow text-xs">
                 Data Connectors
-            </Typography>
-        </Box>
+            </span>
+        </div>
         
         {["file upload", ...Object.keys(dataLoaderMetadata ?? {})].map((dataLoaderType, i) => (
             <Button
                 key={`dataLoader:${dataLoaderType}`}
-                variant="text"
-                size="small"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                     setSelectedTabKey('dataLoader:' + dataLoaderType);
                 }}
-                color='secondary'
-                sx={{
-                    textTransform: "none",
-                    width: 120,
-                    justifyContent: 'flex-start',
-                    textAlign: 'left',
-                    borderRadius: 0,
-                    py: 0.5,
-                    px: 2,
-                    color: selectedTabKey === 'dataLoader:' + dataLoaderType ? 'secondary.main' : 'text.secondary',
-                    borderRight: selectedTabKey === 'dataLoader:' + dataLoaderType ? 2 : 0,
-                    borderColor: 'secondary.main',
-                }}
+                className={cn(
+                    "normal-case w-[120px] justify-start text-left rounded-none py-1 px-4",
+                    selectedTabKey === 'dataLoader:' + dataLoaderType 
+                        ? 'text-secondary border-r-2 border-secondary' 
+                        : 'text-muted-foreground'
+                )}
             >
-                <Typography 
-                    fontSize='inherit'
-                    sx={{
-                        textTransform: "none", 
-                        width: "calc(100% - 4px)", 
-                        textAlign: 'left', 
-                        textOverflow: 'ellipsis', 
-                        overflow: 'hidden', 
-                        whiteSpace: 'nowrap',
-                    }}>
+                <span className="text-inherit w-[calc(100%-4px)] text-left truncate">
                     {dataLoaderType}
-                </Typography>
+                </span>
             </Button>
         ))}
-    </Box>;
+    </div>;
 
-    let tableSelectionPanel = <Box sx={{ px: 0.5, pt: 1, display: 'flex', flexDirection: 'column', backgroundColor: alpha(theme.palette.primary.main, 0.02) }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', px: 1, mb: 1 }}>
-            <Typography variant="caption" sx={{
-                color: "text.disabled", 
-                fontWeight: "500", 
-                flexGrow: 1,
-                fontSize: "0.75rem",
-            }}>
+    let tableSelectionPanel = <div className="px-1 pt-2 flex flex-col bg-primary/5">
+        <div className="flex items-center px-2 mb-2">
+            <span className="text-muted-foreground font-medium flex-grow text-xs">
                 Data Tables
-            </Typography>
-            <Tooltip title="refresh the table list">
-                <IconButton size="small" color="primary" sx={{
-                    '&:hover': {
-                        transform: 'rotate(180deg)',
-                    },
-                    transition: 'transform 0.3s ease-in-out',
-                }} onClick={() => {
-                    fetchTables();
-                }}>
-                    <RefreshIcon sx={{fontSize: 14}} />
-                </IconButton>
-            </Tooltip>
-        </Box>
+            </span>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-primary hover:rotate-180 transition-transform duration-300"
+                            onClick={() => { fetchTables(); }}
+                        >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>refresh the table list</TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        </div>
         
         {dbTables.length == 0 && 
-            <Typography variant="caption" sx={{color: "lightgray", px: 2, py: 0.5, fontStyle: "italic"}}>
+            <span className="text-gray-300 px-4 py-1 italic text-xs">
                 no tables available
-            </Typography>
+            </span>
         }
         
         {/* Regular Tables */}
         {dbTables.filter(t => t.view_source === null).map((t, i) => (
             <Button
                 key={t.name}
-                variant="text"
-                size="small"
-                color='primary'
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                     setSelectedTabKey(t.name);
                 }}
-                sx={{
-                    textTransform: "none",
-                    width: 160,
-                    justifyContent: 'flex-start',
-                    textAlign: 'left',
-                    borderRadius: 0,
-                    py: 0.5,
-                    px: 2,
-                    color: selectedTabKey === t.name ? 'primary.main' : 'text.secondary',
-                    borderRight: selectedTabKey === t.name ? 2 : 0,
-                }}
+                className={cn(
+                    "normal-case w-[160px] justify-start text-left rounded-none py-1 px-4",
+                    selectedTabKey === t.name 
+                        ? 'text-primary border-r-2 border-primary' 
+                        : 'text-muted-foreground'
+                )}
             >
-                <Typography 
-                    fontSize='inherit'
-                    sx={{
-                        width: "calc(100% - 4px)", 
-                        textAlign: 'left', 
-                        textOverflow: 'ellipsis', 
-                        overflow: 'hidden', 
-                        whiteSpace: 'nowrap',
-                    }}>
+                <span className="text-inherit w-[calc(100%-4px)] text-left truncate">
                     {t.name}
-                </Typography>
+                </span>
             </Button>
         ))}
         
         {/* Derived Views Section */}
         {hasDerivedViews && (
-            <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', px: 1, mb: 1 }}>
-                    <Typography variant="caption" sx={{
-                        color: "text.disabled", 
-                        fontWeight: "500", 
-                        flexGrow: 1,
-                        fontSize: "0.75rem",
-                    }}>
+            <div className="mt-4 flex flex-col">
+                <div className="flex items-center px-2 mb-2">
+                    <span className="text-muted-foreground font-medium flex-grow text-xs">
                         Derived Views
-                    </Typography>
-                    <Tooltip title="clean up unreferenced derived views">
-                        <IconButton size="small" color="primary" sx={{
-                            '&:hover': {
-                                transform: 'rotate(180deg)',
-                            },
-                            transition: 'transform 0.3s ease-in-out',
-                        }} 
-                        disabled={dbTables.filter(t => t.view_source !== null).length === 0}
-                        onClick={() => {
-                            handleCleanDerivedViews();
-                        }}>
-                            <CleaningServicesIcon sx={{fontSize: 14}} />
-                        </IconButton>
-                    </Tooltip>
-                </Box>
+                    </span>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    className="h-6 w-6 text-primary hover:rotate-180 transition-transform duration-300"
+                                    disabled={dbTables.filter(t => t.view_source !== null).length === 0}
+                                    onClick={() => { handleCleanDerivedViews(); }}
+                                >
+                                    <Eraser className="h-3.5 w-3.5" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>clean up unreferenced derived views</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
                 
                 {dbTables.filter(t => t.view_source !== null).map((t, i) => (
                     <Button
                         key={t.name}
-                        variant="text"
-                        size="small"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => {
                             setSelectedTabKey(t.name);
                         }}
-                        sx={{
-                            textTransform: "none",
-                            width: 160,
-                            justifyContent: 'flex-start',
-                            textAlign: 'left',
-                            borderRadius: 0,
-                            py: 0.5,
-                            px: 2,
-                            color: selectedTabKey === t.name ? 'primary.main' : 'text.secondary',
-                            backgroundColor: 'transparent',
-                            borderRight: selectedTabKey === t.name ? 2 : 0,
-                            borderColor: 'primary.main',
-                            '&:hover': {
-                                backgroundColor: selectedTabKey === t.name ? 'primary.100' : 'primary.50'
-                            }
-                        }}
+                        className={cn(
+                            "normal-case w-[160px] justify-start text-left rounded-none py-1 px-4 bg-transparent hover:bg-primary/10",
+                            selectedTabKey === t.name 
+                                ? 'text-primary border-r-2 border-primary' 
+                                : 'text-muted-foreground'
+                        )}
                     >
-                        <Typography 
-                            fontSize='inherit'
-                            sx={{
-                                width: "calc(100% - 4px)", 
-                                textAlign: 'left', 
-                                textOverflow: 'ellipsis', 
-                                overflow: 'hidden', 
-                                whiteSpace: 'nowrap',
-                                
-                            }}>
+                        <span className="text-inherit w-[calc(100%-4px)] text-left truncate">
                             {t.name}
-                        </Typography>
+                        </span>
                     </Button>
                 ))}
-            </Box>
+            </div>
         )}
-    </Box>
+    </div>
 
-    let tableView = <Box sx={{ flex: 1, width: 880, overflow: 'auto', p: 2 }}>
+    let tableView = <div className="flex-1 w-[880px] overflow-auto p-4">
         {/* Empty state */}
         {selectedTabKey === '' && (
-            <Typography variant="caption" sx={{color: "text.secondary", px: 1}}>
+            <span className="text-muted-foreground px-2 text-xs">
                 The database is empty, refresh the table list or import some data to get started.
-            </Typography>
+            </span>
         )}
         
         {/* File upload */}
         {selectedTabKey === 'dataLoader:file upload' && (
-            <Box>
-                {uploadFileButton(<Typography component="span" fontSize={18} textTransform="none">{isUploading ? 'uploading...' : 'upload a csv/tsv file to the local database'}</Typography>)} 
-            </Box>
+            <div>
+                {uploadFileButton(<span className="text-lg normal-case">{isUploading ? 'uploading...' : 'upload a csv/tsv file to the local database'}</span>)} 
+            </div>
         )}
         
         {/* Data loader forms */}
         {dataLoaderMetadata && Object.entries(dataLoaderMetadata).map(([dataLoaderType, metadata]) => (
             selectedTabKey === 'dataLoader:' + dataLoaderType && (
-                <Box key={`dataLoader:${dataLoaderType}`} sx={{ position: "relative", maxWidth: '100%' }}>
+                <div key={`dataLoader:${dataLoaderType}`} className="relative max-w-full">
                     <DataLoaderForm 
                         key={`data-loader-form-${dataLoaderType}`}
                         dataLoaderType={dataLoaderType} 
@@ -834,7 +723,7 @@ export const DBTableSelectionDialog: React.FC<{
                             }
                         }} 
                     />
-                </Box>
+                </div>
             )
         ))}
         
@@ -845,38 +734,39 @@ export const DBTableSelectionDialog: React.FC<{
             const currentTable = t;
             const showingAnalysis = tableAnalysisMap[currentTable.name] !== undefined;
             return (
-                <Box key={t.name} sx={{ maxWidth: '100%', overflowX: 'auto', display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Paper variant="outlined">
-                        <Box sx={{ px: 1, display: 'flex', alignItems: 'center', borderBottom: '1px solid rgba(0,0,0,0.1)' }}>
-                            <Typography variant="caption" sx={{  }}>
+                <div key={t.name} className="max-w-full overflow-x-auto flex flex-col gap-2">
+                    <div className="border rounded-md">
+                        <div className="px-2 flex items-center border-b border-black/10">
+                            <span className="text-xs">
                                 {showingAnalysis ? "column stats for " : "sample data from "} 
-                                <Typography component="span" sx={{fontSize: 12, fontWeight: "bold"}}>
+                                <span className="text-xs font-bold">
                                     {currentTable.name}
-                                </Typography>
-                                <Typography component="span" sx={{ml: 1, fontSize: 10, color: "text.secondary"}}>
+                                </span>
+                                <span className="ml-2 text-[10px] text-muted-foreground">
                                     ({currentTable.columns.length} columns × {currentTable.row_count} rows)
-                                </Typography>
-                            </Typography>
-                            <Box sx={{ marginLeft: 'auto', display: 'flex', gap: 1 }}>
+                                </span>
+                            </span>
+                            <div className="ml-auto flex gap-2">
                                 <Button 
-                                    size="small"
-                                    color={showingAnalysis ? "secondary" : "primary"}
+                                    size="sm"
+                                    variant="ghost"
+                                    className={cn("normal-case", showingAnalysis ? "text-secondary" : "text-primary")}
                                     onClick={() => toggleAnalysisView(currentTable.name)}
-                                    startIcon={<AnalyticsIcon fontSize="small" />}
-                                    sx={{textTransform: "none"}}
                                 >
+                                    <BarChart3 className="h-4 w-4 mr-1" />
                                     {showingAnalysis ? "show data samples" : "show column stats"}
                                 </Button>
-                                <IconButton 
-                                    size="small" 
-                                    color="error"
+                                <Button 
+                                    size="icon" 
+                                    variant="ghost"
+                                    className="h-8 w-8 text-destructive"
                                     onClick={() => handleDropTable(currentTable.name)}
                                     title="Drop Table"
                                 >
-                                    <DeleteIcon fontSize="small" />
-                                </IconButton>
-                            </Box>
-                        </Box>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
                         {showingAnalysis ? (
                             <TableStatisticsView 
                                 tableName={currentTable.name}
@@ -899,11 +789,11 @@ export const DBTableSelectionDialog: React.FC<{
                                 isIncompleteTable={currentTable.row_count > 10}
                             />
                         )}
-                    </Paper>
+                    </div>
                     <Button 
-                        variant="contained"
-                        size="small"
-                        sx={{ml: 'auto'}}
+                        variant="default"
+                        size="sm"
+                        className="ml-auto"
                         disabled={isUploading || dbTables.length === 0 || dbTables.find(t => t.name === selectedTabKey) === undefined}
                         onClick={() => {
                             let t = dbTables.find(t => t.name === selectedTabKey);
@@ -914,116 +804,105 @@ export const DBTableSelectionDialog: React.FC<{
                         }}>
                         Load Table
                     </Button>
-                </Box>
+                </div>
             );
         })}
-    </Box>;
+    </div>;
 
     let mainContent =  
-        <Box sx={{ display: 'flex', flexDirection: 'row', minHeight: 400, borderRadius: 2, width: 'fit-content', bgcolor: 'white' }}>
+        <div className="flex flex-row min-h-[400px] rounded-lg w-fit bg-white">
             {/* Button navigation - similar to TableSelectionView */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', px: 1, borderRight: 1, borderColor: 'divider' }}>
-                <Box sx={{ 
-                    minWidth: 180, 
-                    display: 'flex',
-                    flexDirection: 'row',
-                    flexWrap: 'nowrap',
-                    overflowY: 'auto',
-                    flexGrow: 1
-                }}>
+            <div className="flex flex-col px-2 border-r border-border">
+                <div className="min-w-[180px] flex flex-row flex-nowrap overflow-y-auto flex-grow">
                     {/* External Data Loaders Section */}
                     {dataLoaderPanel}
                     {/* Available Tables Section */}
                     {tableSelectionPanel}
-                </Box>
-                <Typography variant="caption" sx={{ mr: 'auto', mt: 'auto', mb: 1, textWrap: 'wrap', '& .MuiButton-root': { minWidth: 'auto',  textTransform: "none" } }}>
-                    {importButton(<Typography component="span" fontSize="inherit">Import</Typography>)}
+                </div>
+                <span className="mr-auto mt-auto mb-2 text-xs flex flex-wrap items-center gap-1">
+                    {importButton(<span className="text-inherit">Import</span>)}
                     ,
                     {exportButton}
                     or
                     <Button
-                        variant="text" size="small"
-                        color="warning"
+                        variant="ghost" 
+                        size="sm"
+                        className="text-amber-600 hover:text-amber-700 normal-case h-auto p-1"
                         onClick={handleDBReset}
                         disabled={isUploading}
-                        //endIcon={<RestartAltIcon />}
                     >
                         reset
                     </Button>
                     the backend database
-                </Typography>
-            </Box>
+                </span>
+            </div>
             {/* Content area - using conditional rendering instead of TabPanel */}
             {tableView}
-        </Box>  
+        </div>  
 
     return (
         <>
             {buttonElement && (
-                <Tooltip 
-                    title={serverConfig.DISABLE_DATABASE ? (
-                        <Typography sx={{ fontSize: '11px' }}>
-                            Install Data Formulator locally to use database. <br />
-                            Link: <Link 
-                                href="https://github.com/microsoft/data-formulator" 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                sx={{ color: 'inherit', textDecoration: 'underline' }}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                https://github.com/microsoft/data-formulator
-                            </Link>
-                    </Typography>
-                ) : ""}
-                    placement="top"
-                >
-                    <span style={{cursor: serverConfig.DISABLE_DATABASE ? 'help' : 'pointer'}}>
-                        <Button variant="text" sx={{fontSize: "inherit", gap: 1}} disabled={serverConfig.DISABLE_DATABASE} onClick={() => {
-                            setTableDialogOpen(true);
-                            onOpen?.();
-                        }}>
-                            {buttonElement}
-                        </Button>
-                    </span>
-                </Tooltip>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <span className={serverConfig.DISABLE_DATABASE ? 'cursor-help' : 'cursor-pointer'}>
+                                <Button 
+                                    variant="ghost" 
+                                    className="text-inherit gap-2" 
+                                    disabled={serverConfig.DISABLE_DATABASE} 
+                                    onClick={() => {
+                                        setTableDialogOpen(true);
+                                        onOpen?.();
+                                    }}
+                                >
+                                    {buttonElement}
+                                </Button>
+                            </span>
+                        </TooltipTrigger>
+                        {serverConfig.DISABLE_DATABASE && (
+                            <TooltipContent>
+                                <p className="text-[11px]">
+                                    Install Data Formulator locally to use database. <br />
+                                    Link: <a 
+                                        href="https://github.com/microsoft/data-formulator" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="text-inherit underline"
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        https://github.com/microsoft/data-formulator
+                                    </a>
+                                </p>
+                            </TooltipContent>
+                        )}
+                    </Tooltip>
+                </TooltipProvider>
             )}
             <Dialog
-                key="db-table-selection-dialog" 
-                onClose={() => {setTableDialogOpen(false)}} 
                 open={tableDialogOpen}
-                sx={{ '& .MuiDialog-paper': { maxWidth: '100%', maxHeight: 800, minWidth: 800 } }}
+                onOpenChange={(open) => { if (!open) setTableDialogOpen(false); }}
             >
-                <DialogTitle sx={{display: "flex" }} >
-                    Database
-                    <IconButton
-                        sx={{marginLeft: "auto"}}
-                        edge="start"
-                        size="small"
-                        color="inherit"
-                        aria-label="close"
-                        onClick={() => setTableDialogOpen(false)}
-                    >
-                        <CloseIcon fontSize="inherit"/>
-                    </IconButton>
-                </DialogTitle>
-                <DialogContent  sx={{p: 1, position: "relative"}}>
-                    {mainContent}
-                    {isUploading && (
-                        <Box sx={{ 
-                            position: 'absolute', 
-                            top: 0, 
-                            left: 0, 
-                            width: '100%', 
-                            height: '100%', 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            justifyContent: 'center',
-                            backgroundColor: 'rgba(255, 255, 255, 0.7)',
-                            zIndex: 1000
-                        }}>
-                            <CircularProgress size={60} thickness={5} />
-                        </Box>
-                    )}
+                <DialogContent className="max-w-[95vw] max-h-[800px] min-w-[800px] p-0">
+                    <DialogHeader className="flex flex-row items-center px-6 py-4 border-b">
+                        <DialogTitle>Database</DialogTitle>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="ml-auto h-6 w-6"
+                            onClick={() => setTableDialogOpen(false)}
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </DialogHeader>
+                    <div className="p-2 relative">
+                        {mainContent}
+                        {isUploading && (
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/70 z-[1000]">
+                                <Loader2 className="h-[60px] w-[60px] animate-spin text-primary" />
+                            </div>
+                        )}
+                    </div>
                 </DialogContent>
             </Dialog>
         </>
@@ -1040,7 +919,6 @@ export const DataLoaderForm: React.FC<{
 }> = ({dataLoaderType, paramDefs, authInstructions, onImport, onFinish}) => {
 
     const dispatch = useDispatch();
-    const theme = useTheme();
     const params = useSelector((state: DataFormulatorState) => state.dataLoaderConnectParams[dataLoaderType] ?? {});
 
     const [tableMetadata, setTableMetadata] = useState<Record<string, any>>({});    let [displaySamples, setDisplaySamples] = useState<Record<string, boolean>>({});
@@ -1056,108 +934,105 @@ export const DataLoaderForm: React.FC<{
         setDisplaySamples({...displaySamples, [tableName]: !displaySamples[tableName]});
     }
 
-    const handleModeChange = (event: React.MouseEvent<HTMLElement>, newMode: "view tables" | "query") => {
+    const handleModeChange = (newMode: "view tables" | "query") => {
         if (newMode != null) {
             setMode(newMode);
         }
     };
 
     let tableMetadataBox = [
-        <Box sx={{my: 2}}>
-            <ToggleButtonGroup
-                color="primary"
-                value={mode}
-                exclusive
-                size="small"
-                onChange={handleModeChange}
-                aria-label="Platform"
-                sx={{
-                    '& .MuiButtonBase-root': {
-                    lineHeight: 1,
-                    color: "text.primary",
-                    textTransform: 'none',
-                    '&.Mui-selected': {
-                        fontWeight: 'bold',
-                    }
-                }}}
-            >
-                <ToggleButton value="view tables">View Tables</ToggleButton>
-                <ToggleButton value="query">Query Data</ToggleButton>
-            </ToggleButtonGroup>
-            <Typography variant="body2" sx={{mb: 1,}}></Typography>
-        </Box>,
-        mode === "view tables" && <TableContainer component={Paper} sx={{maxHeight: 360, overflowY: "auto"}} >
-            <Table sx={{ minWidth: 650 }} size="small" aria-label="simple table">
-            <TableBody>
-                {Object.entries(tableMetadata).map(([tableName, metadata]) => {
-                    return [
-                    <TableRow
-                        key={tableName}
-                        sx={{ 
-                            '&:last-child td, &:last-child th': { border: 0 }, 
-                            '& .MuiTableCell-root': { padding: 0.25, wordWrap: 'break-word', whiteSpace: 'normal' },
-                            backgroundColor: selectedTables.has(tableName) ? 'action.selected' : 'inherit',
-                            '&:hover': { backgroundColor: selectedTables.has(tableName) ? 'action.selected' : 'action.hover' }
-                        }}
-                    >
-                        <TableCell sx={{borderBottom: displaySamples[tableName] ? 'none' : '1px solid rgba(0, 0, 0, 0.1)'}}>
-                            <IconButton size="small" onClick={() => toggleDisplaySamples(tableName)}>
-                                {displaySamples[tableName] ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                            </IconButton>
-                        </TableCell>
-                        <TableCell sx={{maxWidth: 240, borderBottom: displaySamples[tableName] ? 'none' : '1px solid rgba(0, 0, 0, 0.1)'}} component="th" scope="row">
-                            {tableName} <Typography variant="caption" sx={{color: "text.secondary"}} fontSize={10}>
-                                ({metadata.row_count > 0 ? `${metadata.row_count} rows × ` : ""}{metadata.columns.length} cols)
-                            </Typography>
-                        </TableCell>
-                        <TableCell sx={{maxWidth: 500}}>
-                            {metadata.columns.map((column: any) => (
-                                <Chip key={column.name} label={column.name} sx={{fontSize: 11, margin: 0.25, height: 20}} size="small" />
-                            ))}
-                        </TableCell>
-                        <TableCell sx={{width: 40}} padding="checkbox">
-                            <Checkbox
-                                size="small"
-                                checked={selectedTables.has(tableName)}
-                                onChange={(e) => {
-                                    const newSelected = new Set(selectedTables);
-                                    if (e.target.checked) {
-                                        newSelected.add(tableName);
-                                    } else {
-                                        newSelected.delete(tableName);
-                                    }
-                                    setSelectedTables(newSelected);
-                                }}
-                            />
-                        </TableCell>
-                    </TableRow>,
-                    <TableRow key={`${tableName}-sample`}>
-                        <TableCell colSpan={4} sx={{ paddingBottom: 0, paddingTop: 0, px: 0, maxWidth: 800, overflowX: "auto", 
-                                         borderBottom: displaySamples[tableName] ? '1px solid rgba(0, 0, 0, 0.1)' : 'none' }}>
-                        <Collapse in={displaySamples[tableName]} timeout="auto" unmountOnExit>
-                            <Box sx={{ px: 1, py: 0.5}}>
-                                <CustomReactTable rows={metadata.sample_rows.slice(0, 9).map((row: any) => {
-                                    return Object.fromEntries(Object.entries(row).map(([key, value]: [string, any]) => {
-                                        return [key, String(value)];
-                                    }));
-                                })} 
-                                columnDefs={metadata.columns.map((column: any) => ({id: column.name, label: column.name}))} 
-                                rowsPerPageNum={-1} 
-                                compact={false} 
-                                isIncompleteTable={metadata.row_count > 10}
+        <div key="mode-toggle" className="my-4">
+            <div className="inline-flex rounded-md border border-input">
+                <Button
+                    variant={mode === "view tables" ? "default" : "ghost"}
+                    size="sm"
+                    className="rounded-r-none normal-case"
+                    onClick={() => handleModeChange("view tables")}
+                >
+                    View Tables
+                </Button>
+                <Button
+                    variant={mode === "query" ? "default" : "ghost"}
+                    size="sm"
+                    className="rounded-l-none normal-case"
+                    onClick={() => handleModeChange("query")}
+                >
+                    Query Data
+                </Button>
+            </div>
+        </div>,
+        mode === "view tables" && <ScrollArea key="table-container" className="max-h-[360px] border rounded-md">
+            <Table>
+                <TableBody>
+                    {Object.entries(tableMetadata).map(([tableName, metadata]) => {
+                        return [
+                        <TableRow
+                            key={tableName}
+                            className={cn(
+                                selectedTables.has(tableName) ? 'bg-accent' : '',
+                                'hover:bg-muted/50'
+                            )}
+                        >
+                            <TableCell className={cn("p-1", !displaySamples[tableName] && "border-b border-black/10")}>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toggleDisplaySamples(tableName)}>
+                                    {displaySamples[tableName] ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                </Button>
+                            </TableCell>
+                            <TableCell className={cn("max-w-[240px] p-1 break-words", !displaySamples[tableName] && "border-b border-black/10")}>
+                                {tableName} <span className="text-muted-foreground text-[10px]">
+                                    ({metadata.row_count > 0 ? `${metadata.row_count} rows × ` : ""}{metadata.columns.length} cols)
+                                </span>
+                            </TableCell>
+                            <TableCell className="max-w-[500px] p-1">
+                                {metadata.columns.map((column: any) => (
+                                    <Badge key={column.name} variant="secondary" className="text-[11px] m-0.5 h-5">
+                                        {column.name}
+                                    </Badge>
+                                ))}
+                            </TableCell>
+                            <TableCell className="w-10 p-1">
+                                <Checkbox
+                                    checked={selectedTables.has(tableName)}
+                                    onCheckedChange={(checked) => {
+                                        const newSelected = new Set(selectedTables);
+                                        if (checked) {
+                                            newSelected.add(tableName);
+                                        } else {
+                                            newSelected.delete(tableName);
+                                        }
+                                        setSelectedTables(newSelected);
+                                    }}
                                 />
-                            </Box>
-                        </Collapse>
-                        </TableCell>
-                    </TableRow>]
-                })}
+                            </TableCell>
+                        </TableRow>,
+                        <TableRow key={`${tableName}-sample`}>
+                            <TableCell colSpan={4} className={cn("p-0 max-w-[800px] overflow-x-auto", displaySamples[tableName] && "border-b border-black/10")}>
+                                <Collapsible open={displaySamples[tableName]}>
+                                    <CollapsibleContent>
+                                        <div className="px-2 py-1">
+                                            <CustomReactTable rows={metadata.sample_rows.slice(0, 9).map((row: any) => {
+                                                return Object.fromEntries(Object.entries(row).map(([key, value]: [string, any]) => {
+                                                    return [key, String(value)];
+                                                }));
+                                            })} 
+                                            columnDefs={metadata.columns.map((column: any) => ({id: column.name, label: column.name}))} 
+                                            rowsPerPageNum={-1} 
+                                            compact={false} 
+                                            isIncompleteTable={metadata.row_count > 10}
+                                            />
+                                        </div>
+                                    </CollapsibleContent>
+                                </Collapsible>
+                            </TableCell>
+                        </TableRow>]
+                    })}
                 </TableBody>
-                </Table>
-            </TableContainer>,
-        mode === "view tables" && Object.keys(tableMetadata).length > 0 && <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+            </Table>
+        </ScrollArea>,
+        mode === "view tables" && Object.keys(tableMetadata).length > 0 && <div key="import-button" className="flex justify-end mt-2">
             <Button 
-                variant="contained" 
-                size="small"
+                variant="default" 
+                size="sm"
                 disabled={selectedTables.size === 0}
                 onClick={() => {
                     const tablesToImport = Array.from(selectedTables);
@@ -1196,40 +1071,32 @@ export const DataLoaderForm: React.FC<{
             >
                 Import Selected ({selectedTables.size})
             </Button>
-        </Box>,
+        </div>,
         mode === "query" && <DataQueryForm 
+            key="query-form"
             dataLoaderType={dataLoaderType} 
             availableTables={Object.keys(tableMetadata).map(t => ({name: t, fields: tableMetadata[t].columns.map((c: any) => c.name)}))} 
             dataLoaderParams={params} onImport={onImport} onFinish={onFinish} />
     ]
 
     return (
-        <Box sx={{p: 0}}>
-            {isConnecting && <Box sx={{
-                position: "absolute", top: 0, left: 0, width: "100%", height: "100%", 
-                display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
-                backgroundColor: "rgba(255, 255, 255, 0.7)"
-            }}>
-                <CircularProgress size={20} />
-            </Box>}
-            <Typography variant="body2" sx={{}}>
-                Data Connector (<Typography component="span" sx={{color: "secondary.main", fontWeight: "bold"}}>{dataLoaderType}</Typography>)
-            </Typography>
-            <Box sx={{display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 1, ml: 4, mt: 2}}>
+        <div className="p-0">
+            {isConnecting && <div className="absolute inset-0 flex items-center justify-center z-[1000] bg-white/70">
+                <Loader2 className="h-5 w-5 animate-spin" />
+            </div>}
+            <p className="text-sm">
+                Data Connector (<span className="text-secondary font-bold">{dataLoaderType}</span>)
+            </p>
+            <div className="flex flex-row flex-wrap gap-2 ml-8 mt-4">
                 {paramDefs.map((paramDef) => (
-                    <Box key={paramDef.name}>
-                        <TextField
+                    <div key={paramDef.name} className="flex flex-col gap-1">
+                        <Label htmlFor={paramDef.name} className="text-sm">
+                            {paramDef.name}{paramDef.required && <span className="text-destructive">*</span>}
+                        </Label>
+                        <Input
+                            id={paramDef.name}
                             disabled={Object.keys(tableMetadata).length > 0}
-                            sx={{width: "270px", 
-                                '& .MuiInputLabel-root': {fontSize: 14},
-                                '& .MuiInputBase-root': {fontSize: 14},
-                                '& .MuiInputBase-input::placeholder': {fontSize: 12, fontStyle: "italic"}
-                            }}
-                            variant="standard"
-                            size="small"
-                            required={paramDef.required}
-                            key={paramDef.name}
-                            label={paramDef.name}
+                            className="w-[270px] text-sm"
                             value={params[paramDef.name] ?? ''}
                             placeholder={paramDef.default ? `e.g. ${paramDef.default}` : paramDef.description}
                             onChange={(event: any) => { 
@@ -1237,41 +1104,26 @@ export const DataLoaderForm: React.FC<{
                                     dataLoaderType, paramName: paramDef.name, 
                                     paramValue: event.target.value}));
                             }}
-                            slotProps={{
-                                inputLabel: {shrink: true}
-                            }}
                         />
-                    </Box>
+                    </div>
                 ))}
-                <TextField
-                    size="small"
-                    color="secondary"
-                    sx={{width: "270px", 
-                        '& .MuiInputLabel-root': {fontSize: 14, color: theme.palette.secondary.main},
-                        '& .MuiInputBase-root': {fontSize: 14},
-                        '& .MuiInputBase-input::placeholder': {fontSize: 12, fontStyle: "italic"},
-                        '&:hover': {
-                            backgroundColor: alpha(theme.palette.secondary.main, 0.03),
-                        },
-                    }}
-                    key="table-filter"
-                    autoComplete="off"
-                    variant="standard"
-                    label={<Box sx={{display: "flex", flexDirection: "row", alignItems: "center", gap: 0.5}}>
-                        <SearchIcon sx={{ fontSize: 16, color: theme.palette.secondary.main }} />
+                <div className="flex flex-col gap-1">
+                    <Label className="text-sm text-secondary flex items-center gap-1">
+                        <Search className="h-4 w-4" />
                         table filter
-                    </Box>}
-                    placeholder="load only tables containing keywords"
-                    value={tableFilter}
-                    onChange={(event) => setTableFilter(event.target.value)}
-                    slotProps={{
-                        inputLabel: {shrink: true},
-                    }}
-                />
-                {paramDefs.length > 0 && <ButtonGroup sx={{height: 32, mt: 'auto'}} size="small" 
-                 variant="contained" color="primary">
+                    </Label>
+                    <Input
+                        className="w-[270px] text-sm hover:bg-secondary/5"
+                        autoComplete="off"
+                        placeholder="load only tables containing keywords"
+                        value={tableFilter}
+                        onChange={(event) => setTableFilter(event.target.value)}
+                    />
+                </div>
+                {paramDefs.length > 0 && <div className="flex gap-0.5 h-8 mt-auto">
                     <Button 
-                        sx={{textTransform: "none"}}
+                        size="sm"
+                        className="normal-case rounded-r-none"
                         onClick={() => {
                             setIsConnecting(true);
                             setDisplayAuthInstructions(false);
@@ -1306,37 +1158,41 @@ export const DataLoaderForm: React.FC<{
                         {Object.keys(tableMetadata).length > 0 ? "refresh" : "connect"} {tableFilter.trim() ? "with filter" : ""}
                     </Button>
                     <Button 
+                        size="sm"
+                        variant="outline"
+                        className="normal-case rounded-l-none"
                         disabled={Object.keys(tableMetadata).length === 0}
-                        sx={{textTransform: "none"}}                        onClick={() => {
+                        onClick={() => {
                             setTableMetadata({});
                             setTableFilter("");
                         }}>
                         disconnect
                     </Button>
-                </ButtonGroup>}
+                </div>}
 
-            </Box>            
-            <Box  sx={{display: "flex", flexDirection: "row", alignItems: "center", gap: 1, ml: 4, mt: 4}}>
+            </div>            
+            <div className="flex flex-row items-center gap-2 ml-8 mt-8">
                 
-            </Box>
+            </div>
             <Button
-                variant="text" 
-                size="small" 
-                sx={{textTransform: "none", height: 32, mt: 1}}
+                variant="ghost" 
+                size="sm" 
+                className="normal-case h-8 mt-2"
                 onClick={() => setDisplayAuthInstructions(!displayAuthInstructions)}>
                 {displayAuthInstructions ? "hide" : "show"} authentication instructions
             </Button>
-            {<Collapse in={displayAuthInstructions} timeout="auto" unmountOnExit>
-                <Paper sx={{px: 1, py: 0.5, maxHeight: 300, overflowY: "auto"}}>
-                    <Typography variant="body2" sx={{fontSize: 12, whiteSpace: "pre-wrap", p: 1}}>
-                        {authInstructions.trim()}
-                    </Typography>
-                </Paper>
-                </Collapse>
-            }
+            <Collapsible open={displayAuthInstructions}>
+                <CollapsibleContent>
+                    <div className="border rounded-md px-2 py-1 max-h-[300px] overflow-y-auto">
+                        <p className="text-xs whitespace-pre-wrap p-2">
+                            {authInstructions.trim()}
+                        </p>
+                    </div>
+                </CollapsibleContent>
+            </Collapsible>
             
             {Object.keys(tableMetadata).length > 0 && tableMetadataBox }
-        </Box>
+        </div>
     );
 }
 
@@ -1474,66 +1330,62 @@ export const DataQueryForm: React.FC<{
     }
 
     let queryResultBox = queryResult?.status === "success" && queryResult.sample.length > 0 ? [
-         <Box key="query-result-table" sx={{display: "flex", flexDirection: "row", gap: 1, justifyContent: "space-between"}}>
+         <div key="query-result-table" className="flex flex-row gap-2 justify-between">
             <CustomReactTable rows={queryResult.sample} columnDefs={Object.keys(queryResult.sample[0]).map((t: any) => ({id: t, label: t}))} rowsPerPageNum={-1} compact={false} />
-        </Box>,
-        <Box key="query-result-controls" sx={{display: "flex", flexDirection: "row", gap: 1, alignItems: "center"}}>
-            <Button variant="outlined" color="primary" size="small" sx={{textTransform: "none", minWidth: 120, mr: 'auto'}}
+        </div>,
+        <div key="query-result-controls" className="flex flex-row gap-2 items-center">
+            <Button variant="outline" size="sm" className="normal-case min-w-[120px] mr-auto"
                 onClick={() => {
                     setQueryResult(undefined);
                     setQueryResultName("");
                 }}>
                 clear result
             </Button>
-            <TextField
-                size="small"
-                label="import as"
-                sx={{width: 120, ml: 'auto', '& .MuiInputBase-root': {fontSize: 12, height: 32}, 
-                     '& .MuiInputLabel-root': {fontSize: 12, transform: "translate(14px, -6px) scale(0.75)"}}}
-                slotProps={{
-                    inputLabel: {shrink: true},
-                }}
-                value={queryResultName}
-                onChange={(event: any) => setQueryResultName(event.target.value)}
-            />
-            <Button variant="contained" color="primary" size="small" disabled={queryResultName === ""} sx={{textTransform: "none", width: 120}}
+            <div className="flex flex-col gap-1 ml-auto">
+                <Label htmlFor="import-as" className="text-xs">import as</Label>
+                <Input
+                    id="import-as"
+                    className="w-[120px] h-8 text-xs"
+                    value={queryResultName}
+                    onChange={(event: any) => setQueryResultName(event.target.value)}
+                />
+            </div>
+            <Button variant="default" size="sm" disabled={queryResultName === ""} className="normal-case w-[120px] mt-auto"
                 onClick={() => handleImportQueryResult()}>
             import data
             </Button> 
-        </Box>
+        </div>
     ] : [];
     
     return (
-        <Paper sx={{display: "flex", flexDirection: "column", gap: 1, p: 1, position: "relative"}}>
-            {waiting && <Box sx={{position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-                display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
-                backgroundColor: "rgba(255, 255, 255, 0.7)"}}>
-                <CircularProgress size={20} />
-            </Box>}
-            <Typography variant="body2" sx={{color: "text.secondary"}}>
-                <Typography variant="caption" sx={{color: "text.primary", fontSize: 11, mx: 0.5}}>
+        <div className="flex flex-col gap-2 p-2 border rounded-md relative">
+            {waiting && <div className="absolute inset-0 flex items-center justify-center z-[1000] bg-white/70">
+                <Loader2 className="h-5 w-5 animate-spin" />
+            </div>}
+            <p className="text-sm text-muted-foreground">
+                <span className="text-foreground text-[11px] mx-1">
                     query from tables:
-                </Typography>
+                </span>
                 {availableTables.map((table) => (
-                    <Chip key={table.name} label={table.name} //icon={selectedTables.includes(table.name) ? <CheckIcon /> : undefined}
-                        color={selectedTables.includes(table.name) ? "primary" : "default"} variant="outlined" 
-                        sx={{ fontSize: 11, margin: 0.25, 
-                            height: 20, borderRadius: 0.5, 
-                            borderColor: selectedTables.includes(table.name) ? "primary.main" : "rgba(0, 0, 0, 0.1)",
-                            color: selectedTables.includes(table.name) ? "primary.main" : "text.secondary",
-                            '&:hover': {
-                                backgroundColor: "rgba(0, 0, 0, 0.07)",
-                            }
-                        }}
-                        size="small" 
+                    <Badge 
+                        key={table.name} 
+                        variant={selectedTables.includes(table.name) ? "default" : "outline"}
+                        className={cn(
+                            "text-[11px] m-0.5 h-5 rounded cursor-pointer",
+                            selectedTables.includes(table.name) 
+                                ? "border-primary text-primary-foreground" 
+                                : "border-black/10 text-muted-foreground hover:bg-black/5"
+                        )}
                         onClick={() => {
                             setSelectedTables(selectedTables.includes(table.name) ? selectedTables.filter(t => t !== table.name) : [...selectedTables, table.name]);
                         }}
-                    />
+                    >
+                        {table.name}
+                    </Badge>
                 ))}
-            </Typography>
-            <Box sx={{display: "flex", flexDirection: "column", gap: 1, }}>
-                <Box sx={{maxHeight: 300, overflowY: "auto"}}>
+            </p>
+            <div className="flex flex-col gap-2">
+                <div className="max-h-[300px] overflow-y-auto">
                     <Editor
                         value={query}
                         onValueChange={(tempCode: string) => {
@@ -1550,28 +1402,30 @@ export const DataQueryForm: React.FC<{
                             overflowY: "auto"
                         }}
                     />
-                </Box>
-                {queryResult?.status === "error" && <Box sx={{display: "flex", flexDirection: "row", gap: 1, alignItems: "center", overflow: "auto"}}>
-                        <Typography variant="body2" sx={{color: "text.secondary", fontSize: 11, backgroundColor: "rgba(255, 0, 0, 0.1)", p: 0.5, borderRadius: 0.5}}>
+                </div>
+                {queryResult?.status === "error" && <div className="flex flex-row gap-2 items-center overflow-auto">
+                        <p className="text-sm text-muted-foreground text-[11px] bg-red-100 p-1 rounded">
                             {queryResult?.message} 
-                        </Typography>
-                    </Box>}
-                <Box sx={{display: "flex", flexDirection: "row", gap: 1, justifyContent: "flex-end"}}>
-                    <Button variant="outlined" color="primary" size="small" sx={{textTransform: "none"}} disabled={queryResult?.status === "error"}
-                        startIcon={<PrecisionManufacturingIcon />} onClick={() => aiCompleteQuery(query)}>
+                        </p>
+                    </div>}
+                <div className="flex flex-row gap-2 justify-end">
+                    <Button variant="outline" size="sm" className="normal-case" disabled={queryResult?.status === "error"}
+                        onClick={() => aiCompleteQuery(query)}>
+                        <Bot className="h-4 w-4 mr-1" />
                         help me complete the query from selected tables
                     </Button>
-                    {queryResult?.status === "error" && <Button variant="contained" color="primary" size="small" sx={{textTransform: "none",minWidth: 120}} 
-                        startIcon={<PrecisionManufacturingIcon />} onClick={() => aiCompleteQuery(queryResult.code + "\n error:" + queryResult.message)}>
+                    {queryResult?.status === "error" && <Button variant="default" size="sm" className="normal-case min-w-[120px]"
+                        onClick={() => aiCompleteQuery(queryResult.code + "\n error:" + queryResult.message)}>
+                        <Bot className="h-4 w-4 mr-1" />
                         help me fix the error
                     </Button>}
-                    <Button variant="contained" color="primary" size="small" sx={{textTransform: "none", ml: 'auto', width: 80}}
+                    <Button variant="default" size="sm" className="normal-case ml-auto w-20"
                         onClick={() => handleViewQuerySample(query)}>
                         run query
                     </Button>
-                </Box>
+                </div>
                 {queryResult && queryResultBox}
-            </Box>
-        </Paper>
+            </div>
+        </div>
     )
 }

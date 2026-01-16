@@ -1,45 +1,15 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT License.
 
-import { FC, useEffect, useState } from 'react'
+import { FC, useEffect, useState, useRef } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { DataFormulatorState, dfActions, dfSelectors } from '../app/dfSlice';
-import { LinearProgress, styled, TextField, Tooltip } from '@mui/material';
-
-import { useTheme } from '@mui/material/styles';
-import { alpha } from "@mui/material";
-
-import {
-    Chip,
-    Box,
-    Typography,
-    Button,
-    FormControl,
-    Select,
-    MenuItem,
-    Card,
-    IconButton,
-    FormLabel,
-    RadioGroup,
-    Radio,
-    FormControlLabel,
-    CardContent,
-    ClickAwayListener,
-    Popper,
-} from '@mui/material';
-
-import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 
 import { useDrag, useDrop } from 'react-dnd'
 
 import React from 'react';
 
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import CategoryIcon from '@mui/icons-material/Category';
-import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
-import QuestionMarkIcon from '@mui/icons-material/QuestionMark';
+import { ChevronDown, RefreshCw, BarChart3, Layers, Calendar, HelpCircle, X } from 'lucide-react';
 
 import { FieldItem, Channel, EncodingItem, AggrOp, AGGR_OP_LIST, 
         ConceptTransformation, Chart, duplicateField } from "../components/ComponentType";
@@ -52,6 +22,19 @@ import AnimateHeight from 'react-animate-height';
 import { getIconFromDtype, getIconFromType, groupConceptItems } from './ViewUtils';
 import { getUrls } from '../app/utils';
 import { Type } from '../data/types';
+
+import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Progress } from '@/components/ui/progress';
+import { Input } from '@/components/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 
 
@@ -75,8 +58,6 @@ export interface LittleConceptCardProps {
 export const LittleConceptCard: FC<LittleConceptCardProps> = function LittleConceptCard({ channel, field, encoding, handleUnbind, tableMetadata }) {
     // concept cards are draggable cards that can be dropped into encoding shelf
 
-    let theme = useTheme();
-
     const [{ isDragging }, drag] = useDrag(() => ({
         type: "concept-card",
         item: { type: "concept-card", channel: channel, fieldID: field.id, source: "encodingShelf", encoding: encoding },
@@ -91,38 +72,40 @@ export const LittleConceptCard: FC<LittleConceptCardProps> = function LittleConc
 
     let fieldClass = "encoding-active-item ";
 
-    let backgroundColor = alpha(theme.palette.primary.main, 0.05);
+    let bgColorClass = "bg-primary/5";
 
     if (field.source == "original") {
-        //fieldClass += "encoding-active-item-original"
-        backgroundColor = alpha(theme.palette.primary.main, 0.05);
+        bgColorClass = "bg-primary/5";
     } else if (field.source == "custom") {
-        //fieldClass += "encoding-active-item-custom"
-        backgroundColor = alpha(theme.palette.custom.main, 0.05);
+        bgColorClass = "bg-purple-500/5";
     } else if (field.source == "derived") {
-        //fieldClass += "encoding-active-item-derived";
-        backgroundColor = alpha(theme.palette.derived.main, 0.05);
+        bgColorClass = "bg-emerald-500/5";
     }
 
     return (
-        <Chip
+        <Badge
             ref={drag}
-            className={`${fieldClass}`}
-            color={'default'}
-            label={field.name}
-            size="small"
-            sx={{
-                backgroundColor,
-                opacity: opacity,
-                cursor: cursorStyle,
-                ".MuiChip-label":
-                    { /*width: "calc(100% - 36px)", maxWidth: "94px"*/ flexGrow: 1, flexShrink: 1, width: 0 }, ".MuiSvgIcon-root": { fontSize: "inherit" }
-            }}
-            variant="filled"
+            className={cn(
+                fieldClass,
+                bgColorClass,
+                "cursor-grab flex items-center gap-1 px-2 py-0.5 text-xs font-normal",
+                isDragging && "opacity-40 cursor-grabbing"
+            )}
+            variant="secondary"
             onClick={(event) => {}}
-            onDelete={handleUnbind}
-            icon={getIconFromType(tableMetadata[field.name]?.type || Type.Auto)}
-        />
+        >
+            {getIconFromType(tableMetadata[field.name]?.type || Type.Auto)}
+            <span className="flex-grow flex-shrink truncate">{field.name}</span>
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    handleUnbind();
+                }}
+                className="ml-1 hover:text-destructive"
+            >
+                <X className="h-3 w-3" />
+            </button>
+        </Badge>
     )
 }
 
@@ -135,7 +118,6 @@ export interface EncodingBoxProps {
 
 // the encoding boxes, allows 
 export const EncodingBox: FC<EncodingBoxProps> = function EncodingBox({ channel, chartId, tableId }) {
-    let theme = useTheme();
 
     // use tables for infer domains
     const tables = useSelector((state: DataFormulatorState) => state.tables);
@@ -236,17 +218,25 @@ export const EncodingBox: FC<EncodingBoxProps> = function EncodingBox({ channel,
     let channelDisplay = getChannelDisplay(channel);
 
     let radioLabel = (label: string | React.ReactNode, value: any, key: string, width: number = 80, disabled: boolean = false, tooltip: string = "") => {
-        let comp = <FormControlLabel sx={{ width: width, margin: 0 }} key={key}
-                    disabled={disabled}
-                    value={value} control={<Radio size="small" sx={{ padding: "4px" }} />} label={<Box sx={{display: 'flex', alignItems: 'center', gap: '4px'}}>
-                        {label}
-                </Box>} />
+        let comp = (
+            <div className="flex items-center space-x-1" style={{ width }} key={key}>
+                <RadioGroupItem value={value} id={key} disabled={disabled} className="h-4 w-4" />
+                <Label htmlFor={key} className={cn("flex items-center gap-1 text-xs cursor-pointer", disabled && "opacity-50 cursor-not-allowed")}>
+                    {label}
+                </Label>
+            </div>
+        );
         if (tooltip != "") {
-            comp = <Tooltip key={`${key}-tooltip`} title={tooltip} arrow slotProps={{
-                tooltip: {
-                    sx: { bgcolor: 'rgba(255, 255, 255, 0.95)', color: 'rgba(0,0,0,0.95)', border: '1px solid darkgray' },
-                },
-            }}>{comp}</Tooltip>
+            comp = (
+                <TooltipProvider key={`${key}-tooltip`}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>{comp}</TooltipTrigger>
+                        <TooltipContent className="bg-white/95 text-black border border-gray-400">
+                            {tooltip}
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            );
         }
         return comp;
     }
@@ -255,24 +245,17 @@ export const EncodingBox: FC<EncodingBoxProps> = function EncodingBox({ channel,
 
 
     let dataTypeOpt = [
-        <FormLabel key={`enc-box-${channel}-data-type-label`} sx={{ fontSize: "inherit" }} id="data-type-option-radio-buttons-group" >Data Type</FormLabel>,
-        <FormControl
-            key={`enc-box-${channel}-data-type-form-control`}
-            sx={{
-                paddingBottom: "2px", '& .MuiTypography-root': { fontSize: "inherit" }, flexDirection: "row",
-                '& .MuiFormLabel-root': { fontSize: "inherit" }
-            }}>
+        <Label key={`enc-box-${channel}-data-type-label`} className="text-xs" id="data-type-option-radio-buttons-group">Data Type</Label>,
+        <div key={`enc-box-${channel}-data-type-form-control`} className="pb-0.5">
             <RadioGroup
-                row
-                aria-labelledby="data-type-option-radio-buttons-group"
-                name="data-type-option-radio-buttons-group"
+                orientation="horizontal"
+                className="flex flex-row flex-wrap w-40"
                 value={encoding.dtype || "auto"}
-                sx={{ width: 160 }}
-                onChange={(event) => { 
-                    if (event.target.value == "auto") {
+                onValueChange={(value) => { 
+                    if (value == "auto") {
                         updateEncProp("dtype", undefined);
                     } else {
-                        updateEncProp("dtype", event.target.value as "quantitative" | "qualitative" | "temporal");
+                        updateEncProp("dtype", value as "quantitative" | "qualitative" | "temporal");
                     }
                 }}
             >
@@ -281,31 +264,24 @@ export const EncodingBox: FC<EncodingBoxProps> = function EncodingBox({ channel,
                 {radioLabel(getIconFromDtype("nominal"), "nominal", `dtype-nominal`, 40, false, "nominal")}
                 {radioLabel(getIconFromDtype("temporal"), "temporal", `dtype-temporal`, 40, false, "temporal")}
             </RadioGroup>
-        </FormControl>
+        </div>
     ];
 
     let stackOpt = (chart.chartType == "bar" || chart.chartType == "area") && (channel == "x" || channel == "y") ? [
-        <FormLabel key={`enc-box-${channel}-stack-label`} sx={{ fontSize: "inherit" }} id="normalized-option-radio-buttons-group" >Stack</FormLabel>,
-        <FormControl
-            key={`enc-box-${channel}-stack-form-control`}
-            sx={{
-                paddingBottom: "2px", '& .MuiTypography-root': { fontSize: "inherit" }, flexDirection: "row",
-                '& .MuiFormLabel-root': { fontSize: "inherit" }
-            }}>
+        <Label key={`enc-box-${channel}-stack-label`} className="text-xs" id="normalized-option-radio-buttons-group">Stack</Label>,
+        <div key={`enc-box-${channel}-stack-form-control`} className="pb-0.5">
             <RadioGroup
-                row
-                aria-labelledby="normalized-option-radio-buttons-group"
-                name="normalized-option-radio-buttons-group"
+                orientation="horizontal"
+                className="flex flex-row flex-wrap w-40"
                 value={encoding.stack || "default"}
-                sx={{ width: 160 }}
-                onChange={(event) => { updateEncProp("stack", event.target.value == "default" ? undefined : event.target.value); }}
+                onValueChange={(value) => { updateEncProp("stack", value == "default" ? undefined : value); }}
             >
                 {radioLabel("default", "default", `stack-default`)}
                 {radioLabel("layered", "layered", `stack-layered`)}
                 {radioLabel("center", "center", `stack-center`)}
                 {radioLabel("normalize", "normalize", `stack-normalize`)}
             </RadioGroup>
-        </FormControl>
+        </div>
     ] : [];
 
     let domainItems = field ? activeTable?.rows.map(row => row[field?.name]) : [];
@@ -383,107 +359,109 @@ export const EncodingBox: FC<EncodingBoxProps> = function EncodingBox({ channel,
         if (autoSortInferRunning) {
             sortByOptions = [
                 ...sortByOptions,
-                <FormControlLabel sx={{ width: 180, margin: 0 }} key={"auto-btn"}
-                    disabled={autoSortInferRunning || !autoSortResult}
-                    value={JSON.stringify(autoSortResult)} control={<Radio size="small" sx={{ padding: "4px" }} />}
-                    label={<LinearProgress color="primary" sx={{ width: "120px", opacity: 0.4 }} />} />
+                <div className="flex items-center space-x-1 w-[180px]" key={"auto-btn"}>
+                    <RadioGroupItem value={JSON.stringify(autoSortResult)} id="auto-sort-running" disabled={true} className="h-4 w-4" />
+                    <Progress value={undefined} className="w-[120px] h-1 opacity-40" />
+                </div>
             ]
         } else {
             if (autoSortResult != undefined && autoSortResult.length > 0) {
 
-                let autoSortOptTitle = <Box>
-                        <Box>
-                            <Typography sx={{fontWeight: 'bold'}} component='span' fontSize='inherit'>Sort Order: </Typography> 
-                             {autoSortResult.map(x => x ? x.toString() : 'null').join(", ")}
-                        </Box>
-                    </Box>
-
-                let autoSortOpt = 
-                    <Tooltip title={autoSortOptTitle} arrow componentsProps={{
-                        tooltip: {
-                          sx: {
-                            bgcolor: 'rgba(255, 255, 255, 0.95)',
-                            color: 'rgba(0,0,0,0.95)',
-                            border: '1px solid darkgray'
-                          },
-                        },
-                      }}>
-                        <Typography className="auto-sort-option-label">
+                let autoSortOptTitle = (
+                    <div>
+                        <div>
+                            <span className="font-bold text-xs">Sort Order: </span> 
                             {autoSortResult.map(x => x ? x.toString() : 'null').join(", ")}
-                        </Typography>
-                    </Tooltip>;
+                        </div>
+                    </div>
+                );
+
+                let autoSortOpt = (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <span className="auto-sort-option-label truncate text-xs">
+                                    {autoSortResult.map(x => x ? x.toString() : 'null').join(", ")}
+                                </span>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-white/95 text-black border border-gray-400">
+                                {autoSortOptTitle}
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                );
 
                 sortByOptions = [
                     ...sortByOptions,
-                    <FormControlLabel sx={{ width: 180, margin: 0 }} key={"auto"}
-                        disabled={autoSortInferRunning || !autoSortResult}
-                        value={JSON.stringify(autoSortResult)} control={<Radio size="small" sx={{ padding: "4px" }} />}
-                        label={<Box sx={{width: '100%', display:'flex'}}>
-                                    {autoSortOpt}
-                                    <Tooltip title='rerun smart sort'>
-                                        <IconButton onClick={autoSortFunction} size='small' color='primary'>
-                                            <RefreshIcon />
-                                        </IconButton>
-                                    </Tooltip>
-                                </Box>} />
+                    <div className="flex items-center space-x-1 w-[180px]" key={"auto"}>
+                        <RadioGroupItem 
+                            value={JSON.stringify(autoSortResult)} 
+                            id="auto-sort" 
+                            disabled={autoSortInferRunning || !autoSortResult} 
+                            className="h-4 w-4" 
+                        />
+                        <Label htmlFor="auto-sort" className="flex items-center w-full cursor-pointer">
+                            {autoSortOpt}
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button onClick={autoSortFunction} size="icon" variant="ghost" className="h-6 w-6 ml-1">
+                                            <RefreshCw className="h-3 w-3" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>rerun smart sort</TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </Label>
+                    </div>
                 ]
             } else {
                 sortByOptions = [
                     ...sortByOptions,
-                    <FormControlLabel sx={{ width: 180, margin: 0 }} key={"auto-btn"}
-                        disabled={autoSortInferRunning || !autoSortResult}
-                        value={JSON.stringify(autoSortResult)} control={<Radio size="small" sx={{ padding: "4px" }} />}
-                        label={<Button size="small" variant="text"
-                                    sx={{ textTransform: "none", padding: "2px 4px", marginLeft: "0px", minWidth: 0 }}
-                                    onClick={autoSortFunction}>infer smart sort order</Button>} />
+                    <div className="flex items-center space-x-1 w-[180px]" key={"auto-btn"}>
+                        <RadioGroupItem 
+                            value={JSON.stringify(autoSortResult)} 
+                            id="auto-sort-btn" 
+                            disabled={autoSortInferRunning || !autoSortResult} 
+                            className="h-4 w-4" 
+                        />
+                        <Button size="sm" variant="link" className="text-xs p-0.5 h-auto" onClick={autoSortFunction}>
+                            infer smart sort order
+                        </Button>
+                    </div>
                 ]
             }
         }
     }
 
     let sortByOpt = [
-        <FormLabel sx={{ fontSize: "inherit" }} key={`enc-box-${channel}-sort-label`} id="sort-option-radio-buttons-group" >Sort By</FormLabel>,
-        <FormControl
-            key={`enc-box-${channel}-sort-form-control`}
-            sx={{
-                paddingBottom: "4px", '& .MuiTypography-root': { fontSize: "inherit" }, flexDirection: "row",
-                '& .MuiFormLabel-root': { fontSize: "inherit" }
-            }}>
+        <Label className="text-xs" key={`enc-box-${channel}-sort-label`} id="sort-option-radio-buttons-group">Sort By</Label>,
+        <div key={`enc-box-${channel}-sort-form-control`} className="pb-1">
             <RadioGroup
-                row
-                aria-labelledby="sort-option-radio-buttons-group"
-                name="sort-option-radio-buttons-group"
-                value={encoding.sortBy ||  'auto'}
-                sx={{ width: 180 }}
-                onChange={(event) => { updateEncProp("sortBy", event.target.value) }}
+                orientation="horizontal"
+                className="flex flex-row flex-wrap w-[180px]"
+                value={encoding.sortBy || 'auto'}
+                onValueChange={(value) => { updateEncProp("sortBy", value) }}
             >
                 {sortByOptions}
             </RadioGroup>
-        </FormControl>
+        </div>
     ]
 
     let sortOrderOpt = [
-        <FormLabel sx={{ fontSize: "inherit" }} key={`enc-box-${channel}-sort-order-label`} 
-                   id="sort-option-radio-buttons-group" >Sort Order</FormLabel>,
-        <FormControl
-            key={`enc-box-${channel}-sort-order-form-control`}
-            sx={{
-                paddingBottom: "2px", '& .MuiTypography-root': { fontSize: "inherit" }, flexDirection: "row",
-                '& .MuiFormLabel-root': { fontSize: "inherit" }
-            }}>
+        <Label className="text-xs" key={`enc-box-${channel}-sort-order-label`} id="sort-option-radio-buttons-group">Sort Order</Label>,
+        <div key={`enc-box-${channel}-sort-order-form-control`} className="pb-0.5">
             <RadioGroup
-                row
-                aria-labelledby="sort-option-radio-buttons-group"
-                name="sort-option-radio-buttons-group"
+                orientation="horizontal"
+                className="flex flex-row flex-wrap w-[180px]"
                 value={encoding.sortOrder || "auto"}
-                sx={{ width: 180 }}
-                onChange={(event) => { updateEncProp("sortOrder", event.target.value) }}
+                onValueChange={(value) => { updateEncProp("sortOrder", value) }}
             >
                 {radioLabel("auto", "auto", `sort-auto`, 60)}
                 {radioLabel("↑ asc", "ascending", `sort-ascending`, 60)}
                 {radioLabel("↓ desc", "descending", `sort-descending`, 60)}
             </RadioGroup>
-        </FormControl>
+        </div>
     ]
     
     let colorSchemeList = [
@@ -501,49 +479,75 @@ export const EncodingBox: FC<EncodingBoxProps> = function EncodingBox({ channel,
         "spectral"
     ]
     let colorSchemeOpt = channel == "color" ? [
-            <FormLabel sx={{ fontSize: "inherit" }} key={`enc-box-${channel}-color-scheme-label`} id="scheme-option-radio-buttons-group">Color scheme</FormLabel>,
-            <FormControl key="color-sel-form" fullWidth size="small" sx={{textAlign: "initial", fontSize: "12px"}}>
-                <Select
-                    labelId="color-scheme-select-label"
-                    variant="standard"
-                    id="color-scheme-select"
-                    label=""
-                    sx={{'& .MuiSelect-select': {fontSize: "12px", paddingLeft: '6px'}}}
-                    value={encoding.scheme || "default"}
-                    onChange={(event)=>{ updateEncProp("scheme", event.target.value) }}
-                >
-                    <MenuItem value={"default"} key={"color-scheme--1"}><em>default</em></MenuItem>
+            <Label className="text-xs" key={`enc-box-${channel}-color-scheme-label`} id="scheme-option-radio-buttons-group">Color scheme</Label>,
+            <Select
+                key="color-sel-form"
+                value={encoding.scheme || "default"}
+                onValueChange={(value) => { updateEncProp("scheme", value) }}
+            >
+                <SelectTrigger className="w-full h-7 text-xs">
+                    <SelectValue placeholder="default" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="default" className="text-xs italic">default</SelectItem>
                     {colorSchemeList.map((t, i) => (
-                        <MenuItem value={t} key={`color-scheme-${i}`}>{t}</MenuItem>
+                        <SelectItem value={t} key={`color-scheme-${i}`} className="text-xs">{t}</SelectItem>
                     ))}
-                </Select>
-            </FormControl>
+                </SelectContent>
+            </Select>
     ] : []
 
     let encodingConfigCard = (
-        <CardContent sx={{
-            display: "flex", '& svg': { fontSize: "inherit" }, '&:last-child': { pb: "12px", pt: "12px" },
-            margin: '0px 12px', padding: "6px", fontSize: "12px"
-        }} >
-            <Box sx={{margin: 'auto', display: "flex",  width: "fit-content", textAlign: "center", flexDirection: "column", alignItems: "flex-start" }}>
+        <CardContent className="flex py-3 px-3 text-xs">
+            <div className="mx-auto flex flex-col items-start w-fit text-center">
                 {dataTypeOpt}
                 {stackOpt}
                 {sortByOpt}
                 {sortOrderOpt}
                 {colorSchemeOpt}
-            </Box>
+            </div>
         </CardContent>
     )
 
-    let optBackgroundColor = alpha(theme.palette.secondary.main, 0.07);
-
-    let aggregateDisplay = encoding.aggregate ? (<Chip key="aggr-display" className="encoding-prop-chip"  
-        sx={{  backgroundColor: optBackgroundColor, width: field == undefined ? "100%" : "auto" }}
-        onDelete={() => updateEncProp("aggregate", undefined)} color="default" //deleteIcon={<RemoveIcon />}
-        label={encoding.aggregate == "average" ? "avg" : encoding.aggregate} size="small" />) : "";
-    let normalizedDisplay = encoding.stack ? (<Chip key="normalized-display" className="encoding-prop-chip" //deleteIcon={<RemoveIcon />} 
-        color="default" sx={{  backgroundColor: optBackgroundColor }}
-        label={"⌸"} size="small" onDelete={() => updateEncProp("stack", undefined)} />) : "";
+    let aggregateDisplay = encoding.aggregate ? (
+        <Badge 
+            key="aggr-display" 
+            className={cn(
+                "encoding-prop-chip bg-secondary/10 text-xs cursor-pointer",
+                field == undefined && "w-full"
+            )}
+            variant="secondary"
+        >
+            {encoding.aggregate == "average" ? "avg" : encoding.aggregate}
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    updateEncProp("aggregate", undefined);
+                }}
+                className="ml-1 hover:text-destructive"
+            >
+                <X className="h-3 w-3" />
+            </button>
+        </Badge>
+    ) : "";
+    let normalizedDisplay = encoding.stack ? (
+        <Badge 
+            key="normalized-display" 
+            className="encoding-prop-chip bg-secondary/10 text-xs cursor-pointer"
+            variant="secondary"
+        >
+            ⌸
+            <button
+                onClick={(e) => {
+                    e.stopPropagation();
+                    updateEncProp("stack", undefined);
+                }}
+                className="ml-1 hover:text-destructive"
+            >
+                <X className="h-3 w-3" />
+            </button>
+        </Badge>
+    ) : "";
     
     let handleSelectOption = (option: string) => {
         if (conceptShelfItems.map(f => f.name).includes(option)) {
@@ -578,228 +582,96 @@ export const EncodingBox: FC<EncodingBoxProps> = function EncodingBox({ channel,
         }
     })
 
-    // Smart Popper component that switches between bottom-end and top-end
-    const CustomPopper = (props: any) => {
-        return (
-            <Popper 
-                {...props} 
-                placement="bottom-end"
-                modifiers={[
-                    {
-                        name: 'flip',
-                        enabled: true,
-                        options: {
-                            fallbackPlacements: ['top-end'], // Only flip to top-end
-                        },
-                    },
-                    {
-                        name: 'preventOverflow',
-                        enabled: true,
-                        options: {
-                            boundary: 'viewport',
-                            padding: 8,
-                        },
-                    },
-                    {
-                        name: 'offset',
-                        options: {
-                            offset: [0, 8], // [horizontal, vertical] offset
-                        },
-                    },
-                ]}
-                style={{
-                    zIndex: 1300, // Ensure it's above other elements
-                }}
-            />
-        );
-    };
+    // State for popover open
+    const [popoverOpen, setPopoverOpen] = useState(false);
+    const [inputValue, setInputValue] = useState("");
 
-    let createConceptInputBox = <Autocomplete
-        key="concept-create-input-box"
-        slots={{
-            popper: CustomPopper // Try changing to: CustomPopperCSS
-        }}
-        onChange={(event, value) => {
-            if (value != null) {
-                handleSelectOption(value)
-            }
-        }}
-        // value={tempValue}
-        filterOptions={(options, params) => {
-            const filtered = filter(options, params);
-            const { inputValue } = params;
-            // Suggest the creation of a new value
-            const isExisting = options.some((option) => inputValue === option);
-            if (!isExisting) {
-                return [`${inputValue}`, ...filtered,  ]
-            } else {
-                return [...filtered];
-            }
-        }}
-        sx={{ 
-            flexGrow: 1, 
-            flexShrink: 1, 
-            "& .MuiInput-input": { padding: "0px 8px !important"},
-            "& .MuiAutocomplete-listbox": {
-                maxHeight: '600px !important'
-            }
-        }}
-        fullWidth
-        selectOnFocus
-        clearOnBlur
-        handleHomeEndKeys
-        autoHighlight
-        id={`autocomplete-${chartId}-${channel}`}
-        options={conceptGroups.map(g => g.field.name).filter(name => name != "")}
-        getOptionLabel={(option) => {
-            // Value selected with enter, right from the input
-            return option;
-        }}
-        groupBy={(option) => {
-            let groupItem = conceptGroups.find(item => item.field.name == option);
-            if (groupItem && groupItem.field.name != "") {
-                return `${groupItem.group}`;
-            } else {
-                return "create a new field"
-            }         
-        }}
-        renderGroup={(params) => (
-            <Box key={params.key}>
-              <Box className="GroupHeader">{params.group}</Box>
-              <Box className="GroupItems" sx={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(2, 1fr)', 
-                padding: '4px'
-              }}>
-                {params.children}
-              </Box>
-            </Box>
-        )}
-        renderOption={(props, option) => {
-            let renderOption = (conceptShelfItems.map(f => f.name).includes(option)) ? option : `${option}`;
-            let otherStyle = option == `` ? {color: "darkgray", fontStyle: "italic"} : {}
+    let createConceptInputBox = (
+        <Popover key="concept-create-input-box" open={popoverOpen} onOpenChange={setPopoverOpen}>
+            <PopoverTrigger asChild>
+                <Button 
+                    variant="ghost" 
+                    role="combobox"
+                    className="flex-grow flex-shrink h-6 justify-start text-xs font-normal px-2 text-muted-foreground"
+                >
+                    {inputValue || "field"}
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0" align="end">
+                <Command>
+                    <CommandInput 
+                        placeholder="Search or create field..." 
+                        value={inputValue}
+                        onValueChange={setInputValue}
+                        className="text-xs"
+                    />
+                    <CommandList className="max-h-[400px]">
+                        <CommandEmpty>
+                            {inputValue ? (
+                                <Button
+                                    variant="ghost"
+                                    className="w-full justify-start text-xs"
+                                    onClick={() => {
+                                        handleSelectOption(inputValue);
+                                        setPopoverOpen(false);
+                                        setInputValue("");
+                                    }}
+                                >
+                                    Create "{inputValue}"
+                                </Button>
+                            ) : (
+                                <span className="text-xs text-muted-foreground">Type a new field name</span>
+                            )}
+                        </CommandEmpty>
+                        {groupNames.map((groupName) => (
+                            <CommandGroup key={groupName} heading={groupName}>
+                                <div className="grid grid-cols-2 gap-1 p-1">
+                                    {conceptGroups
+                                        .filter(g => g.group === groupName && g.field.name !== "")
+                                        .map((g) => {
+                                            const fieldItem = g.field;
+                                            let bgColorClass = "bg-primary/20";
+                                            if (fieldItem.source == "original") {
+                                                bgColorClass = "bg-primary/20";
+                                            } else if (fieldItem.source == "custom") {
+                                                bgColorClass = "bg-purple-500/20";
+                                            } else if (fieldItem.source == "derived") {
+                                                bgColorClass = "bg-emerald-500/20";
+                                            }
 
-            // Find the field item for this option
-            const fieldItem = conceptShelfItems.find(f => f.name === option);
-            
-            if (fieldItem) {
-                // Create a mini concept card
-                let backgroundColor = theme.palette.primary.main;
-                if (fieldItem.source == "original") {
-                    backgroundColor = theme.palette.primary.light;
-                } else if (fieldItem.source == "custom") {
-                    backgroundColor = theme.palette.custom.main;
-                } else if (fieldItem.source == "derived") {
-                    backgroundColor = theme.palette.derived.main;
-                }
+                                            const isInActiveTable = activeTable?.names.includes(fieldItem.name);
+                                            
+                                            return (
+                                                <CommandItem
+                                                    key={fieldItem.id}
+                                                    value={fieldItem.name}
+                                                    onSelect={() => {
+                                                        handleSelectOption(fieldItem.name);
+                                                        setPopoverOpen(false);
+                                                        setInputValue("");
+                                                    }}
+                                                    className={cn(
+                                                        "cursor-pointer text-[10px] px-2 py-1 rounded border",
+                                                        bgColorClass,
+                                                        !isInActiveTable && "opacity-60"
+                                                    )}
+                                                >
+                                                    <div className="flex items-center gap-1 w-full">
+                                                        {getIconFromType(activeTable?.metadata[fieldItem.name]?.type || Type.Auto)}
+                                                        <span className="truncate flex-1">{fieldItem.name}</span>
+                                                    </div>
+                                                </CommandItem>
+                                            );
+                                        })}
+                                </div>
+                            </CommandGroup>
+                        ))}
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    );
 
-                // Add overlay logic similar to ConceptCard - make fields not in focused table more transparent
-                let draggleCardHeaderBgOverlay = 'rgba(255, 255, 255, 0.9)';
-                
-                // Add subtle tint for non-focused fields
-                if (activeTable && !activeTable.names.includes(fieldItem.name)) {
-                    draggleCardHeaderBgOverlay = 'rgba(255, 255, 255, 1)';
-                }
-
-                // Extract only the compatible props for Card
-                const { key, ...cardProps } = props;
-
-                return (
-                    <Card 
-                        key={key}
-                        onClick={() => handleSelectOption(option)}
-                        sx={{ 
-                            minWidth: 80, 
-                            backgroundColor, 
-                            position: "relative",
-                            border: "none",
-                            cursor: "pointer",
-                            margin: '2px 4px',
-                            "&:hover": {
-                                boxShadow: "0 2px 4px 0 rgb(0 0 0 / 20%)"
-                            }
-                        }}
-                        variant="outlined"
-                        className={`data-field-list-item draggable-card`}
-                    >
-                        <Box sx={{ 
-                                cursor: "pointer", 
-                                background: draggleCardHeaderBgOverlay,
-                                display: 'flex',
-                                alignItems: 'center',
-                                minHeight: '20px',
-                                ml: 0.5
-                            }}
-                            className={`draggable-card-inner ${fieldItem.source}`}
-                        >
-                            <Typography sx={{
-                                margin: '0px 4px',
-                                fontSize: 10, 
-                                width: "100%",
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px',
-                            }} component={'span'}>
-                                {getIconFromType(activeTable?.metadata[fieldItem.name]?.type || Type.Auto)}
-                                <span style={{
-                                    whiteSpace: "nowrap",
-                                    overflow: "hidden", 
-                                    textOverflow: "ellipsis",
-                                    flexShrink: 1
-                                }}>
-                                    {fieldItem.name}
-                                </span>
-                            </Typography>
-                        </Box>
-                    </Card>
-                );
-            } else {
-                // For non-existing options (like new field creation)
-                return (
-                    <Typography 
-                        {...props} 
-                        onClick={() => handleSelectOption(option)}
-                        sx={{
-                            fontSize: "10px", 
-                            padding: '4px 6px',
-                            margin: '2px 4px',
-                            cursor: 'pointer',
-                            border: '1px dashed #ccc',
-                            borderRadius: '4px',
-                            backgroundColor: 'rgba(0,0,0,0.02)',
-                            height: '24px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            "&:hover": {
-                                backgroundColor: 'rgba(0,0,0,0.05)'
-                            },
-                            ...otherStyle
-                        }}
-                    >
-                        {renderOption || "type a new field name"}
-                    </Typography>
-                );
-            }
-        }}
-        freeSolo
-        renderInput={(params) => (
-            <TextField {...params} variant="standard" autoComplete='off' placeholder='field'
-                sx={{height: "24px", "& .MuiInput-root": {height: "24px", fontSize: "small"}}} />
-        )}
-        slotProps={{
-            paper: { // Use paper instead of popper for styling
-                sx: {
-                    width: '300px',
-                    maxWidth: '300px',
-                    '& .MuiAutocomplete-listbox': {
-                        maxHeight: '600px !important'
-                    },
-                }
-            }
-        }}
-    />
-
-    const filter = createFilterOptions<string>();
     // when there is no field added, allow users to directly type concepts here, and it will be created on the fly.
     const encContent = field == undefined ? 
         (encoding.aggregate == 'count' ? [ aggregateDisplay ] : [
@@ -814,44 +686,57 @@ export const EncodingBox: FC<EncodingBoxProps> = function EncodingBox({ channel,
             fieldComponent
         ]
 
+    // State for click away handling
+    const boxRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (boxRef.current && !boxRef.current.contains(event.target as Node)) {
+                setEditMode(false);
+            }
+        };
+        document.addEventListener('mouseup', handleClickOutside);
+        return () => {
+            document.removeEventListener('mouseup', handleClickOutside);
+        };
+    }, []);
+
     let encodingComp = (
-        <ClickAwayListener
-            mouseEvent="onMouseUp"
-            touchEvent="onTouchStart"
-            onClickAway={() => { setEditMode(false) }}
+        <div 
+            ref={boxRef}
+            className="flex flex-col items-start w-full mb-1 channel-shelf-box encoding-item"
         >
-            <Box sx={{ display: 'flex', flexDirection: "column", alignItems: 'flex-start', width: "100%", marginBottom: "4px" }}
-                component="form" className="channel-shelf-box encoding-item">
-                <Card sx={{ width: "100%", boxShadow: editMode ? "0 2px 2px 0 rgb(0 0 0 / 20%), 0 2px 2px 0 rgb(0 0 0 / 19%)" : "" }} variant="outlined">
-                    <Box ref={drop} className="channel-encoded-field">
-                        <IconButton //className="encoding-shelf-action-button"
-                            onClick={() => { setEditMode(!editMode) }} color="default"
-                            aria-label="axis settings" component="span"
-                            size="small" sx={{
-                                padding: "0px", borderRadius: 0, textAlign: "left", fontSize: "inherit", height: "auto",
-                                position: "relative", borderRight: "1px solid lightgray", width: '64px', backgroundColor: "rgba(0,0,0,0.01)",
-                                display: "flex", justifyContent: "space-between"
-                            }}>
-                            <Typography variant="caption" component="span" sx={{ padding: "0px 0px 0px 6px" }}>{channelDisplay}</Typography>
-                            <ArrowDropDownIcon sx={{ position: "absolute", right: "0", 
-                                paddingLeft: "2px", transform: editMode ? "rotate(180deg)" : "" }} fontSize="inherit" />
-                        </IconButton>
-                        <Box sx={{
-                            backgroundColor: backgroundColor, width: "calc(100% - 64px)",
-                            display: "flex", borderBottom: (editMode ? "1px solid rgba(0, 0, 0, 0.12)" : undefined)
-                        }}>
-                            {encContent}
-                        </Box>
-                    </Box>
-                    <AnimateHeight
-                        duration={200}
-                        height={editMode ? "auto" : 0} // see props documentation below
+            <Card className={cn("w-full", editMode && "shadow-md")} >
+                <div ref={drop} className="channel-encoded-field flex">
+                    <button
+                        onClick={() => { setEditMode(!editMode) }}
+                        className={cn(
+                            "p-0 rounded-none text-left text-xs h-auto",
+                            "relative border-r border-gray-300 w-16 bg-black/[0.01]",
+                            "flex justify-between items-center"
+                        )}
                     >
-                        {encodingConfigCard}
-                    </AnimateHeight>
-                </Card>
-            </Box>
-        </ClickAwayListener>
+                        <span className="text-xs pl-1.5">{channelDisplay}</span>
+                        <ChevronDown className={cn(
+                            "absolute right-0 pl-0.5 h-3 w-3 transition-transform",
+                            editMode && "rotate-180"
+                        )} />
+                    </button>
+                    <div className={cn(
+                        "w-[calc(100%-64px)] flex items-center",
+                        editMode && "border-b border-border"
+                    )} style={{ backgroundColor }}>
+                        {encContent}
+                    </div>
+                </div>
+                <AnimateHeight
+                    duration={200}
+                    height={editMode ? "auto" : 0}
+                >
+                    {encodingConfigCard}
+                </AnimateHeight>
+            </Card>
+        </div>
     )
 
     return encodingComp;

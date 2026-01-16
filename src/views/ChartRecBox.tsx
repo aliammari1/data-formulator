@@ -7,33 +7,6 @@ import { DataFormulatorState, dfActions, dfSelectors, fetchCodeExpl, fetchFieldS
 
 import { AppDispatch } from '../app/store';
 
-import {
-    Box,
-    Typography,
-    MenuItem,
-    IconButton,
-    Tooltip,
-    TextField,
-    Stack,
-    Card,
-    Chip,
-    Autocomplete,
-    Menu,
-    SxProps,
-    LinearProgress,
-    CircularProgress,
-    Divider,
-    List,
-    ListItem,
-    alpha,
-    useTheme,
-    Theme,
-    ToggleButton,
-    ToggleButtonGroup,
-    Button,
-    ButtonGroup,
-} from '@mui/material';
-
 import React from 'react';
 
 import { Chart, FieldItem } from "../components/ComponentType";
@@ -45,28 +18,58 @@ import { createDictTable, DictTable } from "../components/ComponentType";
 
 import { getUrls, getTriggers, resolveRecommendedChart } from '../app/utils';
 
-import AddIcon from '@mui/icons-material/Add';
-import PrecisionManufacturing from '@mui/icons-material/PrecisionManufacturing';
-import SmartToyIcon from '@mui/icons-material/SmartToy';
-import TouchAppIcon from '@mui/icons-material/TouchApp';
+import { Plus, X, Lightbulb, TrendingUp, Cog, Loader2 } from 'lucide-react';
 import { Type } from '../data/types';
-import CloseIcon from '@mui/icons-material/Close';
-import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import TipsAndUpdatesIcon from '@mui/icons-material/TipsAndUpdates';
 import { renderTextWithEmphasis } from './EncodingShelfCard';
-import CallSplitIcon from '@mui/icons-material/CallSplit';
-import MovingIcon from '@mui/icons-material/Moving';
-import RotateRightIcon from '@mui/icons-material/RotateRight';
-import EditIcon from '@mui/icons-material/Edit';
 import { ThinkingBufferEffect } from '../components/FunComponents';
+
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
 
 // when this is set to true, the new chart will be focused automatically
 const AUTO_FOCUS_NEW_CHART = false;
 
+// Color configuration for modes
+const modeColors = {
+    agent: {
+        base: 'rgb(99, 102, 241)', // indigo-500
+        light: 'rgba(99, 102, 241, 0.1)',
+        medium: 'rgba(99, 102, 241, 0.2)',
+        hover: 'rgba(99, 102, 241, 0.08)',
+    },
+    interactive: {
+        base: 'rgb(236, 72, 153)', // pink-500
+        light: 'rgba(236, 72, 153, 0.1)',
+        medium: 'rgba(236, 72, 153, 0.2)',
+        hover: 'rgba(236, 72, 153, 0.08)',
+    }
+};
+
+// Difficulty color helpers
+const getDifficultyColor = (difficulty: 'easy' | 'medium' | 'hard') => {
+    switch (difficulty) {
+        case 'easy':
+            return { base: 'rgb(34, 197, 94)', light: 'rgba(34, 197, 94, 0.1)', border: 'rgba(34, 197, 94, 0.4)' };
+        case 'medium':
+            return { base: 'rgb(99, 102, 241)', light: 'rgba(99, 102, 241, 0.1)', border: 'rgba(99, 102, 241, 0.4)' };
+        case 'hard':
+            return { base: 'rgb(245, 158, 11)', light: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.4)' };
+        default:
+            return { base: 'rgb(107, 114, 128)', light: 'rgba(107, 114, 128, 0.1)', border: 'rgba(107, 114, 128, 0.4)' };
+    }
+};
+
 export interface ChartRecBoxProps {
     tableId: string;
     placeHolderChartId?: string;
-    sx?: SxProps;
+    className?: string;
 }
 
 // Table selector component for ChartRecBox
@@ -76,99 +79,85 @@ const NLTableSelector: FC<{
     updateSelectedTableIds: (tableIds: string[]) => void,
     requiredTableIds?: string[]
 }> = ({ selectedTableIds, tables, updateSelectedTableIds, requiredTableIds = [] }) => {
-    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-    const open = Boolean(anchorEl);
-
-    const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handleClose = () => {
-        setAnchorEl(null);
-    };
+    const [open, setOpen] = useState(false);
 
     const handleTableSelect = (table: DictTable) => {
         if (!selectedTableIds.includes(table.id)) {
             updateSelectedTableIds([...selectedTableIds, table.id]);
         }
-        handleClose();
+        setOpen(false);
     };
 
     return (
-        <Box sx={{ 
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '2px',
-            padding: '4px',
-            marginBottom: 0.5,
-        }}>
+        <div className="flex flex-wrap gap-0.5 p-1 mb-0.5">
             {selectedTableIds.map((tableId) => {
                 const isRequired = requiredTableIds.includes(tableId);
                 return (
-                    <Chip
+                    <Badge
                         key={tableId}
-                        label={tables.find(t => t.id == tableId)?.displayId}
-                        size="small"
-                        sx={{
-                            height: 16,
-                            fontSize: '10px',
-                            borderRadius: '2px',
-                            bgcolor: isRequired ? 'rgba(25, 118, 210, 0.2)' : 'rgba(25, 118, 210, 0.1)',
-                            color: 'rgba(0, 0, 0, 0.7)',
-                            '& .MuiChip-label': {
-                                pl: '4px',
-                                pr: '6px'
-                            }
-                        }}
-                        deleteIcon={isRequired ? undefined : <CloseIcon sx={{ fontSize: '8px', width: '12px', height: '12px' }} />}
-                        onDelete={isRequired ? undefined : () => updateSelectedTableIds(selectedTableIds.filter(id => id !== tableId))}
-                    />
+                        variant="secondary"
+                        className={cn(
+                            "h-4 text-[10px] rounded-sm px-1",
+                            isRequired ? "bg-blue-500/20" : "bg-blue-500/10",
+                            "text-foreground/70"
+                        )}
+                    >
+                        {tables.find(t => t.id == tableId)?.displayId}
+                        {!isRequired && (
+                            <button
+                                onClick={() => updateSelectedTableIds(selectedTableIds.filter(id => id !== tableId))}
+                                className="ml-1 hover:text-destructive"
+                            >
+                                <X className="w-2 h-2" />
+                            </button>
+                        )}
+                    </Badge>
                 );
             })}
-            <Tooltip title="select tables for data formulation">
-                <IconButton
-                    size="small"
-                    onClick={handleClick}
-                    sx={{ 
-                        width: 16,
-                        height: 16,
-                        fontSize: '10px',
-                        padding: 0
-                    }}
-                >
-                    <AddIcon fontSize="inherit" />
-                </IconButton>
-            </Tooltip>
-            <Menu
-                anchorEl={anchorEl}
-                open={open}
-                onClose={handleClose}
-            >
-                {tables
-                    .filter(t => t.derive === undefined || t.anchored)
-                    .map((table) => {
-                        const isSelected = selectedTableIds.includes(table.id);
-                        const isRequired = requiredTableIds.includes(table.id);
-                        return (
-                            <MenuItem 
-                                disabled={isSelected}
-                                key={table.id}
-                                onClick={() => handleTableSelect(table)}
-                                sx={{ 
-                                    fontSize: '12px',
-                                    display: 'flex',
-                                    justifyContent: 'space-between',
-                                    alignItems: 'center'
-                                }}
-                            >
-                                {table.displayId}
-                                {isRequired && <Typography sx={{ fontSize: '10px', color: 'text.secondary' }}>(required)</Typography>}
-                            </MenuItem>
-                        );
-                    })
-                }
-            </Menu>
-        </Box>
+            <Popover open={open} onOpenChange={setOpen}>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="w-4 h-4 p-0"
+                                >
+                                    <Plus className="w-2.5 h-2.5" />
+                                </Button>
+                            </PopoverTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Select tables for data formulation</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+                <PopoverContent className="w-48 p-1">
+                    {tables
+                        .filter(t => t.derive === undefined || t.anchored)
+                        .map((table) => {
+                            const isSelected = selectedTableIds.includes(table.id);
+                            const isRequired = requiredTableIds.includes(table.id);
+                            return (
+                                <button 
+                                    disabled={isSelected}
+                                    key={table.id}
+                                    onClick={() => handleTableSelect(table)}
+                                    className={cn(
+                                        "w-full text-left px-2 py-1.5 text-xs flex justify-between items-center rounded hover:bg-accent",
+                                        isSelected && "opacity-50 cursor-not-allowed"
+                                    )}
+                                >
+                                    {table.displayId}
+                                    {isRequired && <span className="text-[10px] text-muted-foreground">(required)</span>}
+                                </button>
+                            );
+                        })
+                    }
+                </PopoverContent>
+            </Popover>
+        </div>
     );
 };
 
@@ -177,138 +166,89 @@ const NLTableSelector: FC<{
 export const IdeaChip: FC<{
     mini?: boolean,
     idea: {text?: string, questions?: string[], goal: string, difficulty: 'easy' | 'medium' | 'hard', type?: 'branch' | 'deep_dive'} 
-    theme: Theme, 
     onClick: () => void, 
-    sx?: SxProps,
+    className?: string,
     disabled?: boolean,
-}> = function ({mini, idea, theme, onClick, sx, disabled}) {
+}> = function ({mini, idea, onClick, className, disabled}) {
 
-    const getDifficultyColor = (difficulty: 'easy' | 'medium' | 'hard') => {
-        switch (difficulty) {
-            case 'easy':
-                return theme.palette.success.main;
-            case 'medium':
-                return theme.palette.primary.main;
-            case 'hard':
-                return theme.palette.warning.main;
-            default:
-                return theme.palette.text.secondary;
-        }
-    };
+    const colors = getDifficultyColor(idea.difficulty || 'medium');
+    const ideaText = idea.goal;
 
-    let styleColor = getDifficultyColor(idea.difficulty || 'medium');
-
-    let ideaText = idea.goal;
-
-    let ideaTextComponent = renderTextWithEmphasis(ideaText, {
+    const ideaTextComponent = renderTextWithEmphasis(ideaText, {
         borderRadius: '0px',
         borderBottom: `1px solid`,
-        borderColor: alpha(styleColor, 0.4),
+        borderColor: colors.border,
         fontSize: '11px',
         lineHeight: 1.4,
-        backgroundColor: alpha(styleColor, 0.05),
+        backgroundColor: colors.light,
     });
 
     return (
-        <Box
-            sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '4px 6px',
-                fontSize: '11px',
-                minHeight: '24px',
-                height: 'auto',
-                borderRadius: 2,
-                border: `1px solid ${alpha(styleColor, 0.2)}`,
-                transition: 'all 0.1s ease-in-out',
-                backgroundColor: alpha(theme.palette.background.paper, 0.9),
-                cursor: disabled ? 'default' : 'pointer',
-                opacity: disabled ? 0.6 : 1,
-                '&:hover': disabled ? 'none' : {
-                    borderColor: alpha(styleColor, 0.7),
-                    transform: 'translateY(-1px)',
-                },
-                ...sx
+        <div
+            className={cn(
+                "inline-flex items-center px-1.5 py-1 text-[11px] min-h-[24px] h-auto rounded-lg",
+                "border transition-all duration-100 bg-background/90",
+                disabled ? "cursor-default opacity-60" : "cursor-pointer hover:-translate-y-0.5",
+                className
+            )}
+            style={{
+                borderColor: colors.border,
             }}
             onClick={disabled ? undefined : onClick}
         >
-            <Typography component="div" sx={{ fontSize: '11px', color: getDifficultyColor(idea.difficulty || 'medium') }}>
+            <div className="text-[11px]" style={{ color: colors.base }}>
                 {ideaTextComponent}
-            </Typography>
-        </Box>
+            </div>
+        </div>
     );
 };
 
 export const AgentIdeaChip: FC<{
     mini?: boolean,
     idea: {questions: string[], goal: string, difficulty: 'easy' | 'medium' | 'hard'} 
-    theme: Theme, 
     onClick: () => void, 
-    sx?: SxProps,
+    className?: string,
     disabled?: boolean,
-}> = function ({mini, idea, theme, onClick, sx, disabled}) {
+}> = function ({mini, idea, onClick, className, disabled}) {
 
-    const getDifficultyColor = (difficulty: 'easy' | 'medium' | 'hard') => {
-        switch (difficulty) {
-            case 'easy':
-                return theme.palette.success.main;
-            case 'medium':
-                return theme.palette.primary.main;
-            case 'hard':
-                return theme.palette.warning.main;
-            default:
-                return theme.palette.text.secondary;
-        }
-    };
+    const colors = getDifficultyColor(idea.difficulty || 'medium');
+    const ideaText = idea.goal;
 
-    let styleColor = getDifficultyColor(idea.difficulty || 'medium');
-
-
-    let ideaText = idea.goal;
-
-    let ideaTextComponent = renderTextWithEmphasis(ideaText, {
+    const ideaTextComponent = renderTextWithEmphasis(ideaText, {
         borderRadius: '0px',
         borderBottom: `1px solid`,
-        borderColor: alpha(styleColor, 0.4),
+        borderColor: colors.border,
         fontSize: '11px',
         lineHeight: 1.4,
-        backgroundColor: alpha(styleColor, 0.05),
+        backgroundColor: colors.light,
     });
 
     return (
-        <Box
-            sx={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '4px 6px',
-                fontSize: '11px',
-                minHeight: '24px',
-                height: 'auto',
-                borderRadius: 2,
-                border: `1px solid ${alpha(styleColor, 0.2)}`,
-                transition: 'all 0.1s ease-in-out',
-                backgroundColor: alpha(theme.palette.background.paper, 0.9),
-                cursor: disabled ? 'default' : 'pointer',
-                opacity: disabled ? 0.6 : 1,
-                '&:hover': disabled ? 'none' : {
-                    borderColor: alpha(styleColor, 0.7),
-                    transform: 'translateY(-1px)',
-                },
-                ...sx
+        <div
+            className={cn(
+                "inline-flex items-center px-1.5 py-1 text-[11px] min-h-[24px] h-auto rounded-lg",
+                "border transition-all duration-100 bg-background/90",
+                disabled ? "cursor-default opacity-60" : "cursor-pointer hover:-translate-y-0.5",
+                className
+            )}
+            style={{
+                borderColor: colors.border,
             }}
             onClick={disabled ? undefined : onClick}
         >
-            <MovingIcon sx={{color: getDifficultyColor(idea.difficulty), fontSize: 18, mr: 0.5, transform: 'rotate(90deg)'}} />
-            <Typography component="div" sx={{ fontSize: '11px', color: getDifficultyColor(idea.difficulty || 'medium') }}>
+            <TrendingUp 
+                className="mr-1 rotate-90" 
+                style={{ color: colors.base, width: 18, height: 18 }} 
+            />
+            <div className="text-[11px]" style={{ color: colors.base }}>
                 {ideaTextComponent}
-            </Typography>
-        </Box>
+            </div>
+        </div>
     );
 };
 
-export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolderChartId, sx }) {
+export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolderChartId, className }) {
     const dispatch = useDispatch<AppDispatch>();
-    const theme = useTheme();
 
     // reference to states
     const tables = useSelector((state: DataFormulatorState) => state.tables);
@@ -331,12 +271,8 @@ export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolde
 
     const focusNextChartRef = useRef<boolean>(true);
     
-    // Color map for different modes - easy to customize!
-    const modeColorMap = {
-        'agent': theme.palette.primary.main,      // purple for agent mode
-        'interactive': theme.palette.secondary.main   // blue for interactive mode
-    };
-    const modeColor = modeColorMap[mode];
+    // Get mode color
+    const modeColor = modeColors[mode];
     
     const [prompt, setPrompt] = useState<string>("");
     const [isFormulating, setIsFormulating] = useState<boolean>(false);
@@ -1175,243 +1111,177 @@ export const ChartRecBox: FC<ChartRecBoxProps> = function ({ tableId, placeHolde
 
     
     return (
-        <Box sx={{ maxWidth: "600px", display: 'flex', flexDirection: 'column', ...sx }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <ButtonGroup
-                    size="small"
-                    sx={{
-                        ml: 1,
-                        '& .MuiButton-root': {
-                            textTransform: 'none',
-                            fontSize: '0.625rem',
-                            fontWeight: 500,
-                            border: 'none',
-                            borderRadius: '4px',
-                            borderBottomLeftRadius: 0,
-                            borderBottomRightRadius: 0,
-                            padding: '2px 6px',
-                            minWidth: 'auto',
-                        },
-                    }}
-                >
-                    <Button variant="text" value="interactive" sx={{ 
-                        color: mode === "interactive" ? modeColorMap['interactive'] : "text.secondary", 
-                        backgroundColor: mode === "interactive" ? alpha(modeColorMap['interactive'], 0.08) : "transparent",
-                        
-                    }} onClick={() => {
-                        setMode("interactive");
-                    }}>
+        <div className={cn("max-w-[600px] flex flex-col", className)}>
+            <div className="flex items-center gap-1">
+                <div className="ml-1 flex">
+                    <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className={cn(
+                            "text-[10px] font-medium rounded rounded-b-none px-1.5 py-0.5 h-auto min-w-0",
+                            mode === "interactive" ? "text-pink-500 bg-pink-500/10" : "text-muted-foreground bg-transparent"
+                        )}
+                        onClick={() => setMode("interactive")}
+                    >
                         interactive
                     </Button>
-                    <Button variant="text" value="agent" sx={{ 
-                            color: mode === "agent" ? modeColorMap['agent'] : "text.secondary", 
-                            backgroundColor: mode === "agent" ? alpha(modeColorMap['agent'], 0.08) : "transparent"
-                        }} onClick={() => {
-                            setMode("agent");
-                        }}>
+                    <Button 
+                        variant="ghost" 
+                        size="sm"
+                        className={cn(
+                            "text-[10px] font-medium rounded rounded-b-none px-1.5 py-0.5 h-auto min-w-0",
+                            mode === "agent" ? "text-indigo-500 bg-indigo-500/10" : "text-muted-foreground bg-transparent"
+                        )}
+                        onClick={() => setMode("agent")}
+                    >
                         agent
                     </Button>
-                </ButtonGroup>
-            </Box>
-            <Card variant='outlined' sx={{ 
-                px: 2, 
-                display: 'flex', 
-                flexDirection: 'column',
-                gap: 1,
-                position: 'relative',
-                borderWidth: 1.5,
-                borderColor: alpha(modeColor, 0.8),
-            }}>
+                </div>
+            </div>
+            <Card 
+                className="px-4 flex flex-col gap-1 relative border-[1.5px]"
+                style={{ borderColor: modeColor.base }}
+            >
                 {isFormulating && (
-                    <LinearProgress 
-                        sx={{ 
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            zIndex: 1000,
-                            height: '4px',
-                            backgroundColor: alpha(modeColor, 0.2),
-                            '& .MuiLinearProgress-bar': {
-                                backgroundColor: modeColor
-                            }
-                        }} 
-                    />
+                    <div className="absolute top-0 left-0 right-0 z-[1000] h-1 overflow-hidden rounded-t">
+                        <div 
+                            className="h-full animate-pulse"
+                            style={{ backgroundColor: modeColor.medium }}
+                        >
+                            <div 
+                                className="h-full w-1/2 animate-[shimmer_1.5s_ease-in-out_infinite]"
+                                style={{ backgroundColor: modeColor.base }}
+                            />
+                        </div>
+                    </div>
                 )}
                 {showTableSelector && (
-                    <Box>
+                    <div>
                         <NLTableSelector
                             selectedTableIds={selectedTableIds}
                             tables={availableTables}
                             updateSelectedTableIds={handleTableSelectionChange}
                             requiredTableIds={[tableId]}
                         />
-                    </Box>
+                    </div>
                 )}
 
-                <Box sx={{ display: 'flex', flexDirection: 'row', gap: 1, alignItems: 'flex-end' }}>
-                    <TextField
-                        variant="standard"
-                        sx={{
-                            flex: 1,
-                            "& .MuiInputLabel-root": { fontSize: '14px' },
-                            "& .MuiInputLabel-root.Mui-focused": { 
-                                color: modeColor
-                            },
-                            "& .MuiInput-input": { fontSize: '14px' },
-                            "& .MuiInput-underline:before": {
-                                borderBottom: 'none',
-                            },
-                            "& .MuiInput-underline:hover:not(.Mui-disabled):before": {
-                                borderBottom: 'none',
-                            },
-                            "& .MuiInput-underline:not(.Mui-disabled):before": {
-                                borderBottom: 'none',
-                            },
-                            "& .MuiInput-underline:(.Mui-disabled):before": {
-                                borderBottom: 'none',
-                            },
-                            "& .MuiInput-underline:after": {
-                                borderBottom: 'none',
-                            }
-                        }}
-                        disabled={isFormulating || isLoadingIdeas}
-                        onChange={(event) => setPrompt(event.target.value)}
-                        onKeyDown={handleKeyDown}
-                        slotProps={{
-                            inputLabel: { shrink: true },
-                            input: {
-                                endAdornment: <Tooltip title="Generate chart from description">
-                                    <span>
-                                        <IconButton 
-                                            size="medium"
-                                            disabled={isFormulating || isLoadingIdeas || !currentTable || prompt.trim() === ""}
-                                            sx={{
-                                                color: modeColor,
-                                                '&:hover': {
-                                                    backgroundColor: alpha(modeColor, 0.08)
-                                                }
-                                            }}
-                                            onClick={() => { 
-                                                focusNextChartRef.current = true;
-                                                if (mode === "agent") {
-                                                    exploreDataFromNLWithStartingQuestion(prompt.trim());
-                                                } else {
-                                                    deriveDataFromNL(prompt.trim());
-                                                }
-                                            }}
-                                        >
-                                            {isFormulating ? <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                                                <CircularProgress size={24} sx={{ color: modeColor }} />
-                                            </Box> : mode === "agent" ? <MovingIcon sx={{transform: 'rotate(90deg)', fontSize: 24}} /> : <PrecisionManufacturing sx={{fontSize: 24}} />}
-                                        </IconButton>
-                                    </span>
-                                </Tooltip>
-                            }
-                        }}
-                        value={prompt}
-                        // label={mode === "agent" ? "Where should the agent go?" : "What do you want to explore?"}
-                        placeholder={`${getQuestion()}`}
-                        fullWidth
-                        multiline
-                        maxRows={4}
-                        minRows={2}
-                    />
-                    {<Divider orientation="vertical" flexItem />}
-                    {<Box sx={{display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 0.5, my: 1}}>
-                        <Typography sx={{ fontSize: 10, color: "text.secondary", marginBottom: 0.5 }}>
+                <div className="flex flex-row gap-1 items-end">
+                    <div className="flex-1 relative">
+                        <Textarea
+                            className="text-sm border-0 focus-visible:ring-0 resize-none min-h-[56px]"
+                            disabled={isFormulating || isLoadingIdeas}
+                            onChange={(event) => setPrompt(event.target.value)}
+                            onKeyDown={handleKeyDown}
+                            value={prompt}
+                            placeholder={getQuestion()}
+                            rows={2}
+                        />
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="absolute right-1 bottom-1"
+                                        disabled={isFormulating || isLoadingIdeas || !currentTable || prompt.trim() === ""}
+                                        style={{ color: modeColor.base }}
+                                        onClick={() => { 
+                                            focusNextChartRef.current = true;
+                                            if (mode === "agent") {
+                                                exploreDataFromNLWithStartingQuestion(prompt.trim());
+                                            } else {
+                                                deriveDataFromNL(prompt.trim());
+                                            }
+                                        }}
+                                    >
+                                        {isFormulating ? (
+                                            <Loader2 className="h-6 w-6 animate-spin" style={{ color: modeColor.base }} />
+                                        ) : mode === "agent" ? (
+                                            <TrendingUp className="h-6 w-6 rotate-90" />
+                                        ) : (
+                                            <Cog className="h-6 w-6" />
+                                        )}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Generate chart from description</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                    <Separator orientation="vertical" className="h-auto self-stretch" />
+                    <div className="flex items-center justify-center flex-col gap-0.5 my-1">
+                        <span className="text-[10px] text-muted-foreground mb-0.5">
                             ideas?
-                        </Typography>
-                        <Tooltip title="Get some ideas!">   
-                            <span>
-                                <IconButton 
-                                    size="medium"
-                                    disabled={isFormulating || isLoadingIdeas || !currentTable}
-                                    sx={{
-                                        color: modeColor,
-                                        '&:hover': {
-                                            backgroundColor: alpha(modeColor, 0.08)
-                                        }
-                                    }}
-                                    onClick={() => getIdeasFromAgent(mode)}
-                                >
-                                    {isLoadingIdeas ? <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
-                                        <CircularProgress size={24} sx={{ color: modeColor }} />
-                                    </Box> : <TipsAndUpdatesIcon sx={{
-                                        fontSize: 24,
-                                        animation: ideas.length == 0 ? 'colorWipe 5s ease-in-out infinite' : 'none',
-                                        '@keyframes colorWipe': {
-                                            '0%, 90%': {
-                                                scale: 1,
-                                            },
-                                            '95%': {
-                                                scale: 1.2,
-                                            },
-                                            '100%': {
-                                                scale: 1,
-                                            },
-                                        },
-                                    }} />}
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </Box>}
-                </Box>
+                        </span>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        disabled={isFormulating || isLoadingIdeas || !currentTable}
+                                        style={{ color: modeColor.base }}
+                                        onClick={() => getIdeasFromAgent(mode)}
+                                    >
+                                        {isLoadingIdeas ? (
+                                            <Loader2 className="h-6 w-6 animate-spin" style={{ color: modeColor.base }} />
+                                        ) : (
+                                            <Lightbulb 
+                                                className={cn(
+                                                    "h-6 w-6",
+                                                    ideas.length === 0 && "animate-pulse"
+                                                )}
+                                            />
+                                        )}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Get some ideas!</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
+                </div>
             </Card>
             {mode === 'interactive' && (ideas.length > 0 || thinkingBuffer) && (
-                <Box sx={{
-                    display: 'flex', 
-                    flexWrap: 'wrap', 
-                    gap: 0.5,
-                    py: 1,
-                }}>
+                <div className="flex flex-wrap gap-0.5 py-1">
                     {ideas.map((idea, index) => (
                         <IdeaChip
                             mini
                             key={index}
                             idea={idea}
-                            theme={theme}
                             onClick={() => {
                                 focusNextChartRef.current = true;
                                 setPrompt(idea.text);
                                 deriveDataFromNL(idea.text);
                             }}
                             disabled={isFormulating}
-                            sx={{
-                                width: 'calc(50% - 16px)',
-                            }}
+                            className="w-[calc(50%-16px)]"
                         />
                     ))}
                     {isLoadingIdeas && thinkingBuffer && thinkingBufferEffect}
-                </Box>
+                </div>
             )}
             {mode === 'agent' && (agentIdeas.length > 0 || thinkingBuffer) && (
-                <Box sx={{
-                    display: 'flex', 
-                    flexWrap: 'wrap', 
-                    gap: 0.5,
-                    marginBottom: 1,
-                    py: 1,
-                }}>
+                <div className="flex flex-wrap gap-0.5 mb-1 py-1">
                     {agentIdeas.map((idea, index) => (
                         <AgentIdeaChip
                             mini
                             key={index}
                             idea={idea}
-                            theme={theme}
                             onClick={() => {
                                 focusNextChartRef.current = true;
                                 exploreDataFromNL(idea.questions);
                             }}
                             disabled={isFormulating}
-                            sx={{
-                                width: 'calc(50% - 16px)',
-                            }}
+                            className="w-[calc(50%-16px)]"
                         />
                     ))}
                     {isLoadingIdeas && thinkingBuffer && thinkingBufferEffect}
-                </Box>
+                </div>
             )}
-        </Box>
+        </div>
     );
 };

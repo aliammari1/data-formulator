@@ -11,28 +11,6 @@ import React, {
   memo,
 } from "react";
 
-import {
-  Box,
-  Divider,
-  Typography,
-  LinearProgress,
-  Stack,
-  ListItemIcon,
-  Card,
-  IconButton,
-  Tooltip,
-  ButtonGroup,
-  useTheme,
-  SxProps,
-  Button,
-  TextField,
-  CircularProgress,
-  Popper,
-  Paper,
-  ClickAwayListener,
-  Badge,
-} from "@mui/material";
-
 import { VegaEmbed } from "react-vega";
 
 import "../scss/VisualizationView.scss";
@@ -47,19 +25,26 @@ import {
   Trigger,
 } from "../components/ComponentType";
 
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddchartIcon from "@mui/icons-material/Addchart";
-import StarIcon from "@mui/icons-material/Star";
-import SouthIcon from "@mui/icons-material/South";
-import TableRowsIcon from "@mui/icons-material/TableRowsOutlined";
-import AnchorIcon from "@mui/icons-material/Anchor";
-import PanoramaFishEyeIcon from "@mui/icons-material/PanoramaFishEye";
-import InsightsIcon from "@mui/icons-material/Insights";
-import CheckIcon from "@mui/icons-material/Check";
-import CloseIcon from "@mui/icons-material/Close";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import CancelOutlinedIcon from "@mui/icons-material/CancelOutlined";
+import {
+  Trash2,
+  BarChart3,
+  Star,
+  ArrowDown,
+  Table2,
+  Anchor,
+  Circle,
+  TrendingUp,
+  Check,
+  X,
+  HelpCircle,
+  CheckCircle2,
+  XCircle,
+  ChevronLeft,
+  ChevronRight,
+  Cloud,
+  Paperclip,
+  Loader2,
+} from "lucide-react";
 
 import _ from "lodash";
 import { getChartTemplate } from "../components/ChartTemplates";
@@ -75,65 +60,55 @@ import {
 } from "./VisualizationView";
 import { TriggerCard } from "./EncodingShelfCard";
 
-import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
-import ChevronRightIcon from "@mui/icons-material/ChevronRight";
-import CloudQueueIcon from "@mui/icons-material/CloudQueue";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
-
-import { alpha } from "@mui/material/styles";
-
 import { dfSelectors } from "../app/dfSlice";
 
-export const ThinkingBanner = (message: string, sx?: SxProps) => (
-  <Box
-    sx={{
-      display: "flex",
-      position: "relative",
-      overflow: "hidden",
-      "&::before": {
-        content: '""',
-        position: "absolute",
-        top: 0,
-        left: 0,
-        width: "100%",
-        height: "100%",
-        background:
-          "linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.8) 50%, transparent 100%)",
-        animation: "windowWipe 2s ease-in-out infinite",
-        zIndex: 1,
-        pointerEvents: "none",
-      },
-      "@keyframes windowWipe": {
-        "0%": {
-          transform: "translateX(-100%)",
-        },
-        "100%": {
-          transform: "translateX(100%)",
-        },
-      },
-      ...sx,
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+
+export const ThinkingBanner = (message: string, className?: string) => (
+  <div
+    className={cn(
+      "flex relative overflow-hidden",
+      "before:content-[''] before:absolute before:top-0 before:left-0 before:w-full before:h-full",
+      "before:bg-gradient-to-r before:from-transparent before:via-white/80 before:to-transparent",
+      "before:animate-[windowWipe_2s_ease-in-out_infinite] before:z-[1] before:pointer-events-none",
+      className
+    )}
+    style={{
+      // Define keyframes inline since Tailwind doesn't have windowWipe by default
     }}
   >
-    <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "left",
-      }}
-    >
-      <CircularProgress size={10} sx={{ color: "text.secondary" }} />
-      <Typography
-        variant="body2"
-        sx={{
-          ml: 1,
-          fontSize: 10,
-          color: "rgba(0, 0, 0, 0.7) !important",
-        }}
-      >
+    <style>
+      {`
+        @keyframes windowWipe {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}
+    </style>
+    <div className="flex items-center justify-start">
+      <Loader2 className="h-2.5 w-2.5 animate-spin text-muted-foreground" />
+      <span className="ml-1 text-[10px] text-black/70">
         {message}
-      </Typography>
-    </Box>
-  </Box>
+      </span>
+    </div>
+  </div>
 );
 
 // Metadata Popup Component
@@ -171,73 +146,59 @@ const MetadataPopup = memo<{
     }
   };
 
+  if (!open || !anchorEl) return null;
+
+  const rect = anchorEl.getBoundingClientRect();
+
   return (
-    <Popper
-      open={open}
-      anchorEl={anchorEl}
-      placement="bottom-start"
-      style={{ zIndex: 1300 }}
+    <div
+      className="fixed z-[1300]"
+      style={{
+        top: rect.bottom + 4,
+        left: rect.left,
+      }}
     >
-      <ClickAwayListener onClickAway={handleCancel}>
-        <Paper
-          elevation={8}
-          sx={{
-            width: 480,
-            fontSize: 12,
-            p: 2,
-            mt: 1,
-            border: "1px solid",
-            borderColor: "divider",
-          }}
-        >
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>
-            Attach metadata to{" "}
-            <Typography
-              component="span"
-              sx={{ fontSize: "inherit", color: "primary.main" }}
-            >
-              {tableName}
-            </Typography>
-          </Typography>
-          <TextField
-            autoFocus
-            label="metadata"
-            placeholder="Attach additional contexts or guidance so that AI agents can better understand and process the data."
-            fullWidth
-            multiline
-            slotProps={{
-              inputLabel: { shrink: true },
-            }}
-            minRows={3}
-            maxRows={20}
-            variant="outlined"
-            size="small"
-            value={metadata}
-            onChange={(e) => setMetadata(e.target.value)}
-            onKeyDown={handleKeyDown}
-            sx={{ my: 1, "& .MuiInputBase-input": { fontSize: 12 } }}
-          />
-          <Box sx={{ mt: 1, display: "flex", gap: 1, alignItems: "center" }}>
-            <Button
-              size="small"
-              sx={{ ml: "auto" }}
-              onClick={handleCancel}
-              color="primary"
-            >
-              Cancel
-            </Button>
-            <Button
-              size="small"
-              onClick={handleSave}
-              color="primary"
-              disabled={!hasChanges}
-            >
-              Save
-            </Button>
-          </Box>
-        </Paper>
-      </ClickAwayListener>
-    </Popper>
+      <div
+        className="w-[480px] text-xs p-4 mt-1 border border-border rounded-md shadow-lg bg-background"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-sm font-medium mb-1">
+          Attach metadata to{" "}
+          <span className="text-primary">
+            {tableName}
+          </span>
+        </p>
+        <Textarea
+          autoFocus
+          placeholder="Attach additional contexts or guidance so that AI agents can better understand and process the data."
+          className="my-2 text-xs min-h-[72px] max-h-[400px]"
+          value={metadata}
+          onChange={(e) => setMetadata(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
+        <div className="mt-2 flex gap-2 items-center justify-end">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleCancel}
+          >
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={!hasChanges}
+          >
+            Save
+          </Button>
+        </div>
+      </div>
+      {/* Click away overlay */}
+      <div
+        className="fixed inset-0 -z-10"
+        onClick={handleCancel}
+      />
+    </div>
   );
 });
 
@@ -247,22 +208,20 @@ const AgentStatusBox = memo<{
   relevantAgentActions: any[];
   dispatch: any;
 }>(({ tableId, relevantAgentActions, dispatch }) => {
-  let theme = useTheme();
-
   let agentStatus = undefined;
 
-  let getAgentStatusColor = (status: string) => {
+  const getAgentStatusColor = (status: string) => {
     switch (status) {
       case "running":
-        return `${theme.palette.text.secondary} !important`;
+        return "text-muted-foreground";
       case "completed":
-        return `${theme.palette.success.main} !important`;
+        return "text-green-600";
       case "failed":
-        return `${theme.palette.error.main} !important`;
+        return "text-destructive";
       case "warning":
-        return `${theme.palette.warning.main} !important`;
+        return "text-yellow-600";
       default:
-        return `${theme.palette.text.secondary} !important`;
+        return "text-muted-foreground";
     }
   };
 
@@ -283,106 +242,73 @@ const AgentStatusBox = memo<{
   }
 
   return (
-    <Box sx={{ padding: "0px 8px" }}>
-      {
-        <Box
-          sx={{
-            py: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "left",
-            "& .MuiSvgIcon-root, .MuiTypography-root": {
-              fontSize: 10,
-              color: getAgentStatusColor(agentStatus),
-            },
-          }}
-        >
-          {agentStatus === "running" &&
-            ThinkingBanner("thinking...", { py: 0.5 })}
-          {agentStatus === "completed" && <CheckCircleOutlineIcon />}
-          {agentStatus === "failed" && <CancelOutlinedIcon />}
-          {agentStatus === "warning" && <HelpOutlineIcon />}
-          <Typography
-            variant="body2"
-            sx={{
-              ml: 0.5,
-              fontSize: 10,
-            }}
-          >
-            {agentStatus === "warning" && "hmm..."}
-            {agentStatus === "failed" && "oops..."}
-            {agentStatus === "completed" && "completed"}
-            {agentStatus === "running" && ""}
-          </Typography>
-          <Tooltip title="Delete message">
-            <IconButton
-              className="delete-button"
-              size="small"
-              sx={{
-                padding: "2px",
-                ml: "auto",
-                transition: "opacity 0.2s ease-in-out",
-                "& .MuiSvgIcon-root": {
-                  fontSize: 12,
-                  color: "darkgray !important",
-                },
-              }}
-              onClick={(event) => {
-                event.stopPropagation();
-                dispatch(
-                  dfActions.deleteAgentWorkInProgress(
-                    relevantAgentActions[0].actionId
-                  )
-                );
-              }}
-            >
-              <CloseIcon fontSize="small" />
-            </IconButton>
+    <div className="px-2">
+      <div
+        className={cn(
+          "py-1 flex items-center justify-start",
+          getAgentStatusColor(agentStatus)
+        )}
+      >
+        {agentStatus === "running" &&
+          ThinkingBanner("thinking...", "py-0.5")}
+        {agentStatus === "completed" && <CheckCircle2 className="h-2.5 w-2.5" />}
+        {agentStatus === "failed" && <XCircle className="h-2.5 w-2.5" />}
+        {agentStatus === "warning" && <HelpCircle className="h-2.5 w-2.5" />}
+        <span className="ml-0.5 text-[10px]">
+          {agentStatus === "warning" && "hmm..."}
+          {agentStatus === "failed" && "oops..."}
+          {agentStatus === "completed" && "completed"}
+          {agentStatus === "running" && ""}
+        </span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="delete-button p-0.5 ml-auto transition-opacity duration-200 hover:bg-accent rounded"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  dispatch(
+                    dfActions.deleteAgentWorkInProgress(
+                      relevantAgentActions[0].actionId
+                    )
+                  );
+                }}
+              >
+                <X className="h-3 w-3 text-gray-400" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Delete message</TooltipContent>
           </Tooltip>
-        </Box>
-      }
+        </TooltipProvider>
+      </div>
       {currentActions.map((a, index, array) => {
         let descriptions = String(a.description).split("\n");
         return (
           <React.Fragment key={a.actionId + "-" + index}>
-            <Box
-              sx={{
-                position: "relative",
-              }}
-            >
+            <div className="relative">
               {descriptions.map((line: string, lineIndex: number) => (
                 <React.Fragment key={lineIndex}>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      fontSize: 10,
-                      color: getAgentStatusColor(a.status),
-                      whiteSpace: "pre-wrap",
-                      wordBreak: "break-word",
-                    }}
+                  <p
+                    className={cn(
+                      "text-[10px] whitespace-pre-wrap break-words",
+                      getAgentStatusColor(a.status)
+                    )}
                   >
                     {line}
-                  </Typography>
+                  </p>
                   {lineIndex < descriptions.length - 1 && (
-                    <Divider sx={{ my: 0.5 }} />
+                    <Separator className="my-0.5" />
                   )}
                 </React.Fragment>
               ))}
-            </Box>
+            </div>
             {index < array.length - 1 && array.length > 1 && (
-              <Box
-                sx={{
-                  ml: 1,
-                  height: "1px",
-                  backgroundColor: "rgba(0, 0, 0, 0.2)",
-                  my: 0.5,
-                }}
-              />
+              <div className="ml-1 h-px bg-black/20 my-0.5" />
             )}
           </React.Fragment>
         );
       })}
-    </Box>
+    </div>
   );
 });
 
@@ -395,17 +321,11 @@ let buildChartCard = (
     focusedChartId == chartElement.chartId ? "selected-card" : "";
   return (
     <Card
-      className={`data-thread-card ${selectedClassName}`}
-      variant="outlined"
-      sx={{
-        width: "100%",
-        display: "flex",
-        position: "relative",
-        ...(unread && {
-          boxShadow:
-            "0 0 6px rgba(255, 152, 0, 0.15), 0 0 12px rgba(255, 152, 0, 0.15)",
-        }),
-      }}
+      className={cn(
+        "data-thread-card w-full flex relative",
+        selectedClassName,
+        unread && "shadow-[0_0_6px_rgba(255,152,0,0.15),0_0_12px_rgba(255,152,0,0.15)]"
+      )}
     >
       {chartElement.element}
     </Card>
@@ -416,8 +336,8 @@ const EditableTableName: FC<{
   initialValue: string;
   tableId: string;
   handleUpdateTableDisplayId: (tableId: string, displayId: string) => void;
-  nonEditingSx?: SxProps;
-}> = ({ initialValue, tableId, handleUpdateTableDisplayId, nonEditingSx }) => {
+  className?: string;
+}> = ({ initialValue, tableId, handleUpdateTableDisplayId, className }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(initialValue);
 
@@ -445,52 +365,40 @@ const EditableTableName: FC<{
 
   if (!isEditing) {
     return (
-      <Tooltip title="edit table name">
-        <Typography
-          onClick={(event) => {
-            event.stopPropagation();
-            setIsEditing(true);
-          }}
-          sx={{
-            ...nonEditingSx,
-            fontSize: "inherit",
-            minWidth: "60px",
-            maxWidth: "90px",
-            wordWrap: "break-word",
-            whiteSpace: "normal",
-            ml: 0.25,
-            padding: "2px",
-            "&:hover": {
-              backgroundColor: "rgba(0,0,0,0.04)",
-              borderRadius: "2px",
-              cursor: "pointer",
-            },
-          }}
-        >
-          {initialValue}
-        </Typography>
-      </Tooltip>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              onClick={(event) => {
+                event.stopPropagation();
+                setIsEditing(true);
+              }}
+              className={cn(
+                "min-w-[60px] max-w-[90px] break-words whitespace-normal ml-0.5 p-0.5",
+                "hover:bg-black/5 hover:rounded-sm hover:cursor-pointer",
+                className
+              )}
+            >
+              {initialValue}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent>edit table name</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   }
 
   return (
-    <Box
-      component="span"
+    <span
       onClick={(event) => event.stopPropagation()}
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        position: "relative",
-        ml: 0.25,
-      }}
+      className="flex items-center relative ml-0.5"
     >
-      <TextField
+      <Input
         value={inputValue}
         onChange={(e) => setInputValue(e.target.value)}
         onKeyDown={handleKeyDown}
         autoFocus
-        variant="filled"
-        size="small"
+        className="h-6 w-16 px-2 py-0.5 text-inherit"
         onBlur={(e) => {
           // Only reset if click is not on the submit button
           if (!e.currentTarget.contains(e.relatedTarget as Node)) {
@@ -498,37 +406,17 @@ const EditableTableName: FC<{
             setIsEditing(false);
           }
         }}
-        sx={{
-          "& .MuiFilledInput-root": {
-            fontSize: "inherit",
-            padding: 0,
-            "& input": {
-              padding: "2px 24px 2px 8px",
-              width: "64px",
-            },
-          },
-        }}
       />
-      <IconButton
-        size="small"
+      <button
+        className="absolute right-0.5 p-0.5 min-w-0 z-[1] hover:bg-accent rounded"
         onMouseDown={(e) => {
           e.preventDefault(); // Prevent blur from firing before click
         }}
         onClick={(e) => handleSubmit(e)}
-        sx={{
-          position: "absolute",
-          right: 2,
-          padding: "2px",
-          minWidth: "unset",
-          zIndex: 1,
-          "& .MuiSvgIcon-root": {
-            fontSize: "0.8rem",
-          },
-        }}
       >
-        <CheckIcon />
-      </IconButton>
-    </Box>
+        <Check className="h-3 w-3" />
+      </button>
+    </span>
   );
 };
 
@@ -538,14 +426,14 @@ let SingleThreadGroupView: FC<{
   leafTables: DictTable[];
   chartElements: { tableId: string; chartId: string; element: any }[];
   usedIntermediateTableIds: string[];
-  sx?: SxProps;
+  className?: string;
 }> = function ({
   scrollRef,
   threadIdx,
   leafTables,
   chartElements,
   usedIntermediateTableIds, // tables that have been used
-  sx,
+  className,
 }) {
   let tables = useSelector((state: DataFormulatorState) => state.tables);
 
@@ -610,44 +498,36 @@ let SingleThreadGroupView: FC<{
 
     let triggerCard = (
       <div key={"thread-card-trigger-box"}>
-        <Box sx={{ flex: 1 }}>
+        <div className="flex-1">
           <TriggerCard
-            className={selectedClassName}
+            className={cn(
+              selectedClassName,
+              highlightedTableIds.includes(trigger.resultTableId) && "border-l-[3px] border-l-primary/50"
+            )}
             trigger={trigger}
             hideFields={trigger.instruction != ""}
-            sx={
-              highlightedTableIds.includes(trigger.resultTableId)
-                ? {
-                    borderLeft: "3px solid",
-                    borderLeftColor: alpha(theme.palette.custom.main, 0.5),
-                  }
-                : {}
-            }
           />
-        </Box>
+        </div>
       </div>
     );
 
     return (
-      <Box
-        sx={{ display: "flex", flexDirection: "column" }}
+      <div
+        className="flex flex-col"
         key={`trigger-card-${trigger.chart?.id}`}
       >
         {triggerCard}
-        <ListItemIcon key={"down-arrow"} sx={{ minWidth: 0 }}>
-          <SouthIcon
-            sx={{
-              fontSize: "inherit",
-              color: highlightedTableIds.includes(trigger.resultTableId)
-                ? theme.palette.primary.light
-                : "darkgray",
-              ...(highlightedTableIds.includes(trigger.resultTableId)
-                ? { strokeWidth: 1, stroke: theme.palette.primary.light }
-                : {}),
-            }}
+        <div key={"down-arrow"} className="min-w-0">
+          <ArrowDown
+            className={cn(
+              "h-3 w-3",
+              highlightedTableIds.includes(trigger.resultTableId)
+                ? "text-primary stroke-[1.5]"
+                : "text-gray-400"
+            )}
           />
-        </ListItemIcon>
-      </Box>
+        </div>
+      </div>
     );
   };
 
@@ -660,21 +540,9 @@ let SingleThreadGroupView: FC<{
     ) {
       let table = tables.find((t) => t.id == tableId);
       return (
-        <Typography sx={{ background: "transparent" }}>
-          <Box
-            sx={{
-              margin: "0px",
-              width: "fit-content",
-              display: "flex",
-              cursor: "pointer",
-              padding: "2px 4px",
-              borderRadius: "4px",
-              transition: "all 0.2s ease",
-              "&:hover": {
-                backgroundColor: "rgba(0, 0, 0, 0.04)",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-              },
-            }}
+        <span className="bg-transparent">
+          <div
+            className="m-0 w-fit flex cursor-pointer px-1 py-0.5 rounded transition-all duration-200 hover:bg-black/5 hover:shadow-sm"
             onClick={(event) => {
               event.stopPropagation();
               dispatch(dfActions.setFocusedTable(tableId));
@@ -689,28 +557,14 @@ let SingleThreadGroupView: FC<{
               }
             }}
           >
-            <Stack
-              direction="row"
-              sx={{ marginLeft: 0.25, marginRight: "auto", fontSize: 12 }}
-              alignItems="center"
-              gap={"2px"}
-            >
-              <AnchorIcon sx={{ fontSize: 14, color: "rgba(0,0,0,0.5)" }} />
-              <Typography
-                fontSize="inherit"
-                sx={{
-                  textAlign: "center",
-                  color: "rgba(0,0,0,0.7)",
-                  maxWidth: "100px",
-                  wordWrap: "break-word",
-                  whiteSpace: "normal",
-                }}
-              >
+            <div className="flex items-center gap-0.5 ml-0.5 mr-auto text-xs">
+              <Anchor className="h-3.5 w-3.5 text-black/50" />
+              <span className="text-center text-black/70 max-w-[100px] break-words whitespace-normal">
                 {table?.displayId || tableId}
-              </Typography>
-            </Stack>
-          </Box>
-        </Typography>
+              </span>
+            </div>
+          </div>
+        </span>
       );
     }
 
@@ -724,26 +578,21 @@ let SingleThreadGroupView: FC<{
 
     let selectedClassName = tableId == focusedTableId ? "selected-card" : "";
 
-    let collapsedProps = collapsed
-      ? { width: "50%", "& canvas": { width: 60, maxHeight: 50 } }
-      : { width: "100%" };
-
     let releventChartElements = relevantCharts.map((ce, j) => (
-      <Box
+      <div
         key={`relevant-chart-${ce.chartId}`}
-        sx={{
-          display: "flex",
-          padding: 0,
-          pb: j == relevantCharts.length - 1 ? 1 : 0.5,
-          ...collapsedProps,
-        }}
+        className={cn(
+          "flex p-0",
+          j == relevantCharts.length - 1 ? "pb-1" : "pb-0.5",
+          collapsed ? "w-1/2 [&_canvas]:w-[60px] [&_canvas]:max-h-[50px]" : "w-full"
+        )}
       >
         {buildChartCard(
           ce,
           focusedChartId,
           charts.find((c) => c.id == ce.chartId)?.unread
         )}
-      </Box>
+      </div>
     ));
 
     // only charts without dependency can be deleted
@@ -752,40 +601,34 @@ let SingleThreadGroupView: FC<{
     );
 
     let tableCardIcon = table?.anchored ? (
-      <AnchorIcon
-        sx={{
-          fontSize: 16,
-          color:
-            tableId === focusedTableId
-              ? theme.palette.primary.main
-              : "rgba(0,0,0,0.5)",
-          fontWeight: tableId === focusedTableId ? "bold" : "normal",
-        }}
+      <Anchor
+        className={cn(
+          "h-4 w-4",
+          tableId === focusedTableId ? "text-primary" : "text-black/50"
+        )}
       />
     ) : (
-      <TableRowsIcon sx={{ fontSize: 16 }} />
+      <Table2 className="h-4 w-4" />
     );
 
     let regularTableBox = (
-      <Box
+      <div
         key={`regular-table-box-${tableId}`}
         ref={
           relevantCharts.some((c) => c.chartId == focusedChartId)
             ? scrollRef
             : null
         }
-        sx={{ padding: "0px" }}
+        className="p-0"
       >
         <Card
-          className={`data-thread-card ${selectedClassName}`}
-          variant="outlined"
-          sx={{
-            width: "100%",
-            backgroundColor: alpha(theme.palette.primary.light, 0.1),
-            borderLeft: highlightedTableIds.includes(tableId)
-              ? `3px solid ${theme.palette.primary.light}`
-              : "1px solid lightgray",
-          }}
+          className={cn(
+            "data-thread-card w-full bg-primary/10 cursor-pointer",
+            selectedClassName,
+            highlightedTableIds.includes(tableId)
+              ? "border-l-[3px] border-l-primary"
+              : "border-l border-l-gray-300"
+          )}
           onClick={() => {
             dispatch(dfActions.setFocusedTable(tableId));
             if (focusedChart?.tableRef != tableId) {
@@ -800,27 +643,13 @@ let SingleThreadGroupView: FC<{
             }
           }}
         >
-          <Box sx={{ margin: "0px", display: "flex" }}>
-            <Stack
-              direction="row"
-              sx={{ marginLeft: 0.5, marginRight: "auto", fontSize: 12 }}
-              alignItems="center"
-              gap={"2px"}
-            >
-              <IconButton
-                color="primary"
-                sx={{
-                  minWidth: 0,
-                  padding: 0.25,
-                  "&:hover": {
-                    transform: "scale(1.3)",
-                    transition: "all 0.1s linear",
-                  },
-                  "&.Mui-disabled": {
-                    color: "rgba(0, 0, 0, 0.5)",
-                  },
-                }}
-                size="small"
+          <div className="m-0 flex">
+            <div className="flex items-center gap-0.5 ml-0.5 mr-auto text-xs">
+              <button
+                className={cn(
+                  "min-w-0 p-0.5 hover:scale-[1.3] transition-all duration-100 rounded",
+                  "disabled:text-black/50 text-primary"
+                )}
                 disabled={
                   table?.derive == undefined ||
                   tables.some((t) => t.derive?.trigger.tableId == tableId)
@@ -836,15 +665,9 @@ let SingleThreadGroupView: FC<{
                 }}
               >
                 {tableCardIcon}
-              </IconButton>
-              <Box
-                sx={{
-                  margin: "4px 8px 4px 2px",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                {table?.virtual ? <CloudQueueIcon sx={{ fontSize: 10 }} /> : ""}
+              </button>
+              <div className="my-1 mx-2 flex items-center">
+                {table?.virtual ? <Cloud className="h-2.5 w-2.5" /> : ""}
                 {focusedTableId == tableId ? (
                   <EditableTableName
                     initialValue={table?.displayId || tableId}
@@ -852,127 +675,88 @@ let SingleThreadGroupView: FC<{
                     handleUpdateTableDisplayId={handleUpdateTableDisplayId}
                   />
                 ) : (
-                  <Typography
-                    fontSize="inherit"
-                    sx={{
-                      textAlign: "center",
-                      color: "rgba(0,0,0,0.7)",
-                      maxWidth: "90px",
-                      ml: table?.virtual ? 0.5 : 0,
-                      wordWrap: "break-word",
-                      whiteSpace: "normal",
-                    }}
+                  <span
+                    className={cn(
+                      "text-center text-black/70 max-w-[90px] break-words whitespace-normal",
+                      table?.virtual && "ml-0.5"
+                    )}
                   >
                     {table?.displayId || tableId}
-                  </Typography>
+                  </span>
                 )}
-              </Box>
-            </Stack>
-            <ButtonGroup
-              aria-label="Basic button group"
-              variant="text"
-              sx={{ textAlign: "end", margin: "auto 2px auto auto" }}
-            >
-              {table?.derive == undefined && (
-                <Tooltip
-                  key="attach-metadata-btn-tooltip"
-                  title={
-                    table?.attachedMetadata
-                      ? "edit table metadata"
-                      : "attach table metadata"
-                  }
-                >
-                  <IconButton
-                    aria-label="attach metadata"
-                    size="small"
-                    sx={{
-                      padding: 0.25,
-                      "&:hover": {
-                        transform: "scale(1.2)",
-                        transition: "all 0.1s linear",
-                      },
-                    }}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      handleOpenMetadataPopup(table!, event.currentTarget);
-                    }}
-                  >
-                    <AttachFileIcon
-                      fontSize="small"
-                      sx={{
-                        fontSize: 18,
-                        color: table?.attachedMetadata
-                          ? "secondary.main"
-                          : "text.secondary",
-                        opacity: table?.attachedMetadata ? 1 : 0.7,
+              </div>
+            </div>
+            <div className="flex text-right my-auto ml-auto mr-0.5">
+              <TooltipProvider>
+                {table?.derive == undefined && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        aria-label="attach metadata"
+                        className="p-0.5 hover:scale-[1.2] transition-all duration-100 rounded"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleOpenMetadataPopup(table!, event.currentTarget);
+                        }}
+                      >
+                        <Paperclip
+                          className={cn(
+                            "h-[18px] w-[18px]",
+                            table?.attachedMetadata
+                              ? "text-secondary-foreground"
+                              : "text-muted-foreground opacity-70"
+                          )}
+                        />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {table?.attachedMetadata
+                        ? "edit table metadata"
+                        : "attach table metadata"}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+
+                {tableDeleteEnabled && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        aria-label="delete table"
+                        className="p-0.5 hover:scale-[1.2] transition-all duration-100 rounded"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          dispatch(dfActions.deleteTable(tableId));
+                        }}
+                      >
+                        <Trash2 className="h-[18px] w-[18px] text-orange-500" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>delete table</TooltipContent>
+                  </Tooltip>
+                )}
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      aria-label="create a new chart"
+                      className="p-0.5 hover:scale-[1.2] transition-all duration-100 rounded"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        dispatch(dfActions.setFocusedTable(tableId));
+                        dispatch(dfActions.setFocusedChart(undefined));
                       }}
-                    />
-                  </IconButton>
+                    >
+                      <BarChart3 className="h-[18px] w-[18px] text-primary" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>create a new chart</TooltipContent>
                 </Tooltip>
-              )}
-
-              {tableDeleteEnabled && (
-                <Tooltip key="delete-table-btn-tooltip" title="delete table">
-                  <IconButton
-                    aria-label="share"
-                    size="small"
-                    sx={{
-                      padding: 0.25,
-                      "&:hover": {
-                        transform: "scale(1.2)",
-                        transition: "all 0.1s linear",
-                      },
-                    }}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      dispatch(dfActions.deleteTable(tableId));
-                    }}
-                  >
-                    <DeleteIcon
-                      fontSize="small"
-                      sx={{ fontSize: 18 }}
-                      color="warning"
-                    />
-                  </IconButton>
-                </Tooltip>
-              )}
-
-              <Tooltip
-                key="create-new-chart-btn-tooltip"
-                title="create a new chart"
-              >
-                <IconButton
-                  aria-label="share"
-                  size="small"
-                  sx={{
-                    padding: 0.25,
-                    "&:hover": {
-                      transform: "scale(1.2)",
-                      transition: "all 0.1s linear",
-                    },
-                  }}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    dispatch(dfActions.setFocusedTable(tableId));
-                    dispatch(dfActions.setFocusedChart(undefined));
-                  }}
-                >
-                  <AddchartIcon
-                    fontSize="small"
-                    sx={{ fontSize: 18 }}
-                    color="primary"
-                  />
-                </IconButton>
-              </Tooltip>
-            </ButtonGroup>
-          </Box>
+              </TooltipProvider>
+            </div>
+          </div>
         </Card>
-      </Box>
+      </div>
     );
-
-    let chartElementProps = collapsed
-      ? { display: "flex", flexWrap: "wrap" }
-      : {};
 
     let relevantAgentActions = agentActions
       .filter((a) => a.tableId == tableId)
@@ -988,52 +772,41 @@ let SingleThreadGroupView: FC<{
 
     return [
       regularTableBox,
-      <Box
+      <div
         key={`table-associated-elements-box-${tableId}`}
-        sx={{ display: "flex", flexDirection: "row" }}
+        className="flex flex-row"
       >
         {!leafTableIds.includes(tableId) && (
-          <Box
-            sx={{
-              minWidth: "1px",
-              padding: "0px",
-              width: "16px",
-              flex: "none",
-              display: "flex",
-              marginLeft: highlightedTableIds.includes(tableId) ? "7px" : "8px",
-              borderLeft: highlightedTableIds.includes(tableId)
-                ? `3px solid ${theme.palette.primary.light}`
-                : "1px dashed darkgray",
-            }}
+          <div
+            className={cn(
+              "min-w-[1px] p-0 w-4 flex-none flex",
+              highlightedTableIds.includes(tableId)
+                ? "ml-[7px] border-l-[3px] border-l-primary"
+                : "ml-2 border-l border-l-gray-400 border-dashed"
+            )}
           >
-            <Box
-              sx={{
-                padding: 0,
-                width: "1px",
-                margin: "auto",
+            <div
+              className="p-0 w-px m-auto"
+              style={{
                 backgroundImage:
                   "linear-gradient(180deg, darkgray, darkgray 75%, transparent 75%, transparent 100%)",
                 backgroundSize: "1px 6px, 3px 100%",
               }}
-            ></Box>
-          </Box>
+            ></div>
+          </div>
         )}
-        <Box
-          sx={{
-            flex: 1,
-            padding: "8px 0px",
-            minHeight: "8px",
-            ...chartElementProps,
-          }}
+        <div
+          className={cn(
+            "flex-1 py-2 min-h-2",
+            collapsed && "flex flex-wrap"
+          )}
         >
           {releventChartElements}
           {agentActionBox}
-        </Box>
-      </Box>,
+        </div>
+      </div>,
     ];
   };
-
-  const theme = useTheme();
 
   let focusedChart = useSelector((state: DataFormulatorState) =>
     charts.find((c) => c.id == focusedChartId)
@@ -1087,174 +860,110 @@ let SingleThreadGroupView: FC<{
       ? leafTables.map((lt, i) => {
           let leafTrigger = lt.derive?.trigger;
 
-          let leftBorder =
-            i == leafTables.length - 1
-              ? `none`
-              : `1px dashed rgba(0, 0, 0, 0.3)`;
-          let stackML = "8px";
+          let isHighlighted = focusedTableId && leafTableIds.indexOf(focusedTableId) > i;
+          let isFocused = focusedTableId && lt.id == focusedTableId;
+          let isLast = i == leafTables.length - 1;
+
           let spaceBox = (
-            <Box
-              sx={{
-                height: "16px",
-                width: "16px",
-                flexShrink: 0,
-                borderLeft:
-                  i == leafTables.length - 1
-                    ? `1px dashed rgba(0, 0, 0, 0.3)`
-                    : "none",
-                borderBottom: `1px dashed rgba(0, 0, 0, 0.3)`,
-              }}
-            ></Box>
+            <div
+              className={cn(
+                "h-4 w-4 flex-shrink-0",
+                isLast ? "border-l border-l-black/30 border-dashed" : "",
+                "border-b border-b-black/30 border-dashed"
+              )}
+            ></div>
           );
 
-          if (focusedTableId && leafTableIds.indexOf(focusedTableId) > i) {
-            leftBorder = `3px solid ${theme.palette.primary.light}`;
-            stackML = "7px";
-          }
-
-          if (focusedTableId && lt.id == focusedTableId) {
+          if (isFocused) {
             spaceBox = (
-              <Box
-                sx={{
-                  height: "16px",
-                  width: "16px",
-                  flexShrink: 0,
-                  ml: i == leafTables.length - 1 ? "-1px" : "-2px",
-                  borderLeft: `3px solid ${theme.palette.primary.light}`,
-                  borderBottom: `3px solid ${theme.palette.primary.light}`,
-                }}
-              ></Box>
+              <div
+                className={cn(
+                  "h-4 w-4 flex-shrink-0",
+                  isLast ? "-ml-px" : "-ml-0.5",
+                  "border-l-[3px] border-l-primary",
+                  "border-b-[3px] border-b-primary"
+                )}
+              ></div>
             );
           }
 
           return (
-            <Stack
+            <div
               key={`leaf-table-stack-${lt.id}`}
-              sx={{
-                ml: stackML,
-                width: "208px",
-                display: "flex",
-                flexDirection: "row",
-                borderLeft: leftBorder,
-              }}
+              className={cn(
+                "w-[208px] flex flex-row",
+                isHighlighted ? "ml-[7px] border-l-[3px] border-l-primary" : "ml-2",
+                !isLast && !isHighlighted && "border-l border-l-black/30 border-dashed"
+              )}
             >
               {spaceBox}
-              <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
+              <div className="flex flex-col flex-1">
                 {leafTrigger && buildTriggerCard(leafTrigger)}
                 {buildTableCard(lt.id)}
-              </Box>
-            </Stack>
+              </div>
+            </div>
           );
         })
       : leafTables.map((lt, i) => {
           return (
-            <Stack
+            <div
               key={`leaf-table-stack-${lt.id}`}
-              sx={{
-                ml: 0,
-                width: "192px",
-                display: "flex",
-                flexDirection: "row",
-              }}
+              className="ml-0 w-48 flex flex-row"
             >
-              <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
+              <div className="flex flex-col flex-1">
                 {lt.derive?.trigger && buildTriggerCard(lt.derive.trigger)}
                 {buildTableCard(lt.id)}
-              </Box>
-            </Stack>
+              </div>
+            </div>
           );
         });
 
   return (
-    <Box
-      sx={{
-        ...sx,
-        "& .selected-card": {
-          border: `2px solid ${theme.palette.primary.light}`,
-        },
-        transition: "box-shadow 0.1s linear",
-      }}
+    <div
+      className={cn(
+        className,
+        "[&_.selected-card]:border-2 [&_.selected-card]:border-primary transition-shadow duration-100"
+      )}
       data-thread-index={threadIdx}
     >
-      <Box
-        sx={{ display: "flex", direction: "ltr", margin: "2px 2px 8px 2px" }}
-      >
-        <Divider
-          flexItem
-          sx={{
-            margin: "auto",
-            "& .MuiDivider-wrapper": { display: "flex", flexDirection: "row" },
-            "&::before, &::after": {
-              borderColor: alpha(theme.palette.custom.main, 0.2),
-              borderWidth: "2px",
-              width: 60,
-            },
-          }}
-        >
-          <Typography
-            sx={{
-              fontSize: "10px",
-              color: "text.secondary",
-              textTransform: "none",
-            }}
-          >
+      <div className="flex ltr m-0.5 mb-2">
+        <div className="flex items-center m-auto">
+          <div className="w-[60px] h-0.5 bg-primary/20"></div>
+          <span className="text-[10px] text-muted-foreground px-2">
             {`thread - ${threadIdx + 1}`}
-          </Typography>
-        </Divider>
-      </Box>
-      <div
-        style={{ padding: "2px 4px 2px 4px", marginTop: 0, direction: "ltr" }}
-      >
+          </span>
+          <div className="w-[60px] h-0.5 bg-primary/20"></div>
+        </div>
+      </div>
+      <div className="px-1 py-0.5 mt-0 ltr">
         {usedTableIdsInThread.map((tableId, i) => {
           let table = tables.find((t) => t.id === tableId) as DictTable;
           return [
-            <Typography
+            <span
               key={`thread-used-table-${tableId}-${i}-text`}
-              sx={{
-                fontSize: "10px",
-                cursor: "pointer",
-                width: "fit-content",
-                "&:hover": {
-                  backgroundColor: alpha(theme.palette.primary.light, 0.1),
-                },
-              }}
+              className="text-[10px] cursor-pointer w-fit hover:bg-primary/10"
               onClick={() => {
                 dispatch(dfActions.setFocusedTable(tableId));
               }}
             >
               {table.displayId || tableId}
-            </Typography>,
-            <Box
+            </span>,
+            <div
               key={`thread-used-table-${tableId}-${i}-gap-box`}
-              sx={{
-                minWidth: "1px",
-                padding: "0px",
-                width: "16px",
-                flex: "none",
-                display: "flex",
-                height: "10px",
-                marginLeft: highlightedTableIds.includes(tableId)
-                  ? "7px"
-                  : "8px",
-                borderLeft: highlightedTableIds.includes(tableId)
-                  ? `3px solid ${theme.palette.primary.light}`
-                  : "1px dashed darkgray",
-              }}
-            ></Box>,
+              className={cn(
+                "min-w-[1px] p-0 w-4 flex-none flex h-2.5",
+                highlightedTableIds.includes(tableId)
+                  ? "ml-[7px] border-l-[3px] border-l-primary"
+                  : "ml-2 border-l border-dashed border-l-gray-400"
+              )}
+            ></div>,
           ];
         })}
-        <Box
-          sx={{
-            display: "flex",
-            width: "192px",
-            flexDirection: "column",
-            flex: 1,
-          }}
-        >
+        <div className="flex w-48 flex-col flex-1">
           {tableElementList.length > triggerCards.length
             ? w(tableElementList, triggerCards, "")
             : w(triggerCards, tableElementList, "")}
-        </Box>
+        </div>
         {leafTableComp}
       </div>
       <MetadataPopup
@@ -1269,7 +978,7 @@ let SingleThreadGroupView: FC<{
           ""
         }
       />
-    </Box>
+    </div>
   );
 };
 
@@ -1293,81 +1002,52 @@ const VegaLiteChartElement: FC<{
   }) => {
     const id = `data-thread-chart-Element-${chart.id}`;
     return (
-      <Box
+      <div
         onClick={() => onChartClick(chart.id, table.id)}
-        className="vega-thumbnail-box"
-        style={{
-          width: "100%",
-          position: "relative",
-          cursor: "pointer !important",
-        }}
+        className="vega-thumbnail-box w-full relative cursor-pointer"
       >
-        <Box sx={{ margin: "auto" }}>
+        <div className="m-auto">
           {isSaved && (
-            <Typography sx={{ position: "absolute", margin: "5px", zIndex: 2 }}>
-              <StarIcon sx={{ color: "gold" }} fontSize="small" />
-            </Typography>
+            <span className="absolute m-[5px] z-[2]">
+              <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+            </span>
           )}
           {status == "pending" && (
-            <Box
-              sx={{
-                position: "absolute",
-                height: "100%",
-                width: "100%",
-                zIndex: 20,
-                backgroundColor: "rgba(243, 243, 243, 0.8)",
-                display: "flex",
-                alignItems: "center",
-                cursor: "pointer",
-              }}
-            >
-              <LinearProgress
-                sx={{ width: "100%", height: "100%", opacity: 0.05 }}
-              />
-            </Box>
+            <div className="absolute h-full w-full z-20 bg-gray-100/80 flex items-center cursor-pointer">
+              <Progress className="w-full h-full opacity-5" />
+            </div>
           )}
-          <Box
-            className="data-thread-chart-card-action-button"
-            sx={{
-              zIndex: 10,
-              color: "blue",
-              position: "absolute",
-              right: 1,
-              background: "rgba(255, 255, 255, 0.95)",
-            }}
-          >
-            <Tooltip title="delete chart">
-              <IconButton
-                size="small"
-                color="warning"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onDelete(chart.id);
-                }}
-              >
-                <DeleteIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Box>
-          <Box
-            className={"vega-thumbnail"}
+          <div className="data-thread-chart-card-action-button z-10 text-blue-500 absolute right-0.5 bg-white/95">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    className="p-1 text-orange-500 hover:bg-accent rounded"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onDelete(chart.id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>delete chart</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div
+            className={cn(
+              "vega-thumbnail flex",
+              isSaved ? "bg-yellow-50" : "bg-white",
+              "[&_.vega-embed]:m-auto",
+              "[&_canvas]:w-auto [&_canvas]:h-auto [&_canvas]:max-w-[120px] [&_canvas]:max-h-[100px]"
+            )}
             id={id}
-            sx={{
-              display: "flex",
-              backgroundColor: isSaved ? "rgba(255,215,0,0.05)" : "white",
-              "& .vega-embed": { margin: "auto" },
-              "& canvas": {
-                width: "auto !important",
-                height: "auto !important",
-                maxWidth: 120,
-                maxHeight: 100,
-              },
-            }}
           >
             <VegaEmbed spec={assembledSpec} />
-          </Box>
-        </Box>
-      </Box>
+          </div>
+        </div>
+      </div>
     );
   }
 );
@@ -1396,72 +1076,42 @@ const MemoizedChartObject = memo<{
     );
 
     let deleteButton = (
-      <Box
-        className="data-thread-chart-card-action-button"
-        sx={{
-          zIndex: 10,
-          color: "blue",
-          position: "absolute",
-          right: 1,
-          background: "rgba(255, 255, 255, 0.95)",
-        }}
-      >
-        <Tooltip title="delete chart">
-          <IconButton
-            size="small"
-            color="warning"
-            onClick={(event) => {
-              event.stopPropagation();
-              onDelete(chart.id);
-            }}
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </Box>
+      <div className="data-thread-chart-card-action-button z-10 text-blue-500 absolute right-0.5 bg-white/95">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                className="p-1 text-orange-500 hover:bg-accent rounded"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onDelete(chart.id);
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>delete chart</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
     );
 
     if (["Auto", "?"].includes(chart.chartType)) {
       let element = (
-        <Box
-          className="vega-thumbnail-box"
+        <div
+          className="vega-thumbnail-box w-full text-muted-foreground h-12 flex bg-white relative flex-col cursor-pointer"
           onClick={() => onChartClick(chart.id, table.id)}
-          sx={{
-            width: "100%",
-            color: "text.secondary",
-            height: 48,
-            display: "flex",
-            backgroundColor: "white",
-            position: "relative",
-            flexDirection: "column",
-          }}
         >
           {status == "pending" ? (
-            <Box
-              sx={{
-                position: "absolute",
-                height: "100%",
-                width: "100%",
-                zIndex: 20,
-                backgroundColor: "rgba(243, 243, 243, 0.8)",
-                display: "flex",
-                alignItems: "center",
-                cursor: "pointer",
-              }}
-            >
-              <LinearProgress
-                sx={{ width: "100%", height: "100%", opacity: 0.05 }}
-              />
-            </Box>
+            <div className="absolute h-full w-full z-20 bg-gray-100/80 flex items-center cursor-pointer">
+              <Progress className="w-full h-full opacity-5" />
+            </div>
           ) : (
             ""
           )}
-          <InsightsIcon
-            sx={{ margin: "auto", color: "darkgray" }}
-            fontSize="medium"
-          />
+          <TrendingUp className="m-auto h-6 w-6 text-gray-400" />
           {deleteButton}
-        </Box>
+        </div>
       );
       return element;
     }
@@ -1470,49 +1120,22 @@ const MemoizedChartObject = memo<{
       let chartTemplate = getChartTemplate(chart.chartType);
 
       let element = (
-        <Box
+        <div
           key={`unavailable-${chart.id}`}
-          width={"100%"}
-          className={"vega-thumbnail vega-thumbnail-box"}
+          className="vega-thumbnail vega-thumbnail-box w-full flex bg-white relative flex-col cursor-pointer"
           onClick={() => onChartClick(chart.id, table.id)}
-          sx={{
-            display: "flex",
-            backgroundColor: "white",
-            position: "relative",
-            flexDirection: "column",
-          }}
         >
           {status == "pending" ? (
-            <Box
-              sx={{
-                position: "absolute",
-                height: "100%",
-                width: "100%",
-                zIndex: 20,
-                backgroundColor: "rgba(243, 243, 243, 0.8)",
-                display: "flex",
-                alignItems: "center",
-                cursor: "pointer",
-              }}
-            >
-              <LinearProgress
-                sx={{ width: "100%", height: "100%", opacity: 0.05 }}
-              />
-            </Box>
+            <div className="absolute h-full w-full z-20 bg-gray-100/80 flex items-center cursor-pointer">
+              <Progress className="w-full h-full opacity-5" />
+            </div>
           ) : (
             ""
           )}
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              margin: "auto",
-              height: 48,
-            }}
-          >
-            <Box
-              sx={{
-                margin: "auto",
+          <div className="flex flex-col m-auto h-12">
+            <div
+              className="m-auto"
+              style={{
                 transform:
                   chart.chartType == "Table" ? "rotate(15deg)" : undefined,
               }}
@@ -1523,10 +1146,10 @@ const MemoizedChartObject = memo<{
                 32,
                 chart.chartType == "Table" ? 1 : 0.5
               )}
-            </Box>
+            </div>
             {deleteButton}
-          </Box>
-        </Box>
+          </div>
+        </div>
       );
       return element;
     }
@@ -1620,7 +1243,7 @@ const MemoizedChartObject = memo<{
   }
 );
 
-export const DataThread: FC<{ sx?: SxProps }> = function ({ sx }) {
+export const DataThread: FC<{ className?: string }> = function ({ className }) {
   let tables = useSelector((state: DataFormulatorState) => state.tables);
   let focusedTableId = useSelector(
     (state: DataFormulatorState) => state.focusedTableId
@@ -1773,20 +1396,12 @@ export const DataThread: FC<{ sx?: SxProps }> = function ({ sx }) {
       : 232;
 
   let view = (
-    <Box
-      maxWidth={drawerOpen ? 720 : collaposedViewWidth}
-      sx={{
-        overflow: "auto", // Add horizontal scroll when drawer is open
-        position: "relative",
-        display: "flex",
-        flexDirection: "column",
-        direction: "ltr",
-        height: "calc(100% - 16px)",
-        flexWrap: drawerOpen ? "wrap" : "nowrap",
-        gap: 1,
-        p: 1,
-        transition: "max-width 0.1s linear", // Smooth width transition
-      }}
+    <div
+      className={cn(
+        "overflow-auto relative flex flex-col ltr h-[calc(100%-16px)] gap-1 p-1 transition-[max-width] duration-100",
+        drawerOpen ? "flex-wrap" : "flex-nowrap"
+      )}
+      style={{ maxWidth: drawerOpen ? 720 : collaposedViewWidth }}
     >
       {Object.entries(leafTableGroups).map(([groupId, leafTables], i) => {
         let usedIntermediateTableIds = Object.values(leafTableGroups)
@@ -1810,193 +1425,181 @@ export const DataThread: FC<{ sx?: SxProps }> = function ({ sx }) {
               ...usedIntermediateTableIds,
               ...usedLeafTableIds,
             ]}
-            sx={{
-              backgroundColor: "white",
-              borderRadius: 2,
-              padding: 1,
-              my: 0.5,
-              flex: "none",
-              display: "flex",
-              flexDirection: "column",
-              height: "fit-content",
-              width: leafTables.length > 1 ? "216px" : "200px",
-              transition: "all 0.3s ease",
-            }}
+            className={cn(
+              "bg-white rounded-lg p-1 my-0.5 flex-none flex flex-col h-fit transition-all duration-300",
+              leafTables.length > 1 ? "w-[216px]" : "w-[200px]"
+            )}
           />
         );
       })}
-    </Box>
+    </div>
   );
 
   let jumpButtonsDrawerOpen = (
-    <ButtonGroup size="small" color="primary">
-      {_.chunk(
-        Array.from(
-          { length: Object.keys(leafTableGroups).length },
-          (_, i) => i
-        ),
-        3
-      ).map((group, groupIdx) => {
-        const startNum = group[0] + 1;
-        const endNum = group[group.length - 1] + 1;
-        const label =
-          startNum === endNum ? `${startNum}` : `${startNum}-${endNum}`;
+    <div className="flex gap-0">
+      <TooltipProvider>
+        {_.chunk(
+          Array.from(
+            { length: Object.keys(leafTableGroups).length },
+            (_, i) => i
+          ),
+          3
+        ).map((group, groupIdx) => {
+          const startNum = group[0] + 1;
+          const endNum = group[group.length - 1] + 1;
+          const label =
+            startNum === endNum ? `${startNum}` : `${startNum}-${endNum}`;
 
-        return (
-          <Tooltip
-            key={`thread-nav-group-${groupIdx}`}
-            title={`Jump to thread${startNum === endNum ? "" : "s"} ${label}`}
-          >
-            <IconButton
-              size="small"
-              color="primary"
-              sx={{ fontSize: "12px" }}
-              onClick={() => {
-                setTimeout(() => {
-                  // Get currently most visible thread index
-                  const viewportCenter = window.innerWidth / 2;
-                  const currentIndex =
-                    Array.from(
-                      document.querySelectorAll("[data-thread-index]")
-                    ).reduce((closest, element) => {
-                      const rect = element.getBoundingClientRect();
-                      const distance = Math.abs(
-                        rect.left + rect.width / 2 - viewportCenter
+          return (
+            <Tooltip key={`thread-nav-group-${groupIdx}`}>
+              <TooltipTrigger asChild>
+                <button
+                  className="p-1 text-xs text-primary hover:bg-accent rounded"
+                  onClick={() => {
+                    setTimeout(() => {
+                      // Get currently most visible thread index
+                      const viewportCenter = window.innerWidth / 2;
+                      const currentIndex =
+                        Array.from(
+                          document.querySelectorAll("[data-thread-index]")
+                        ).reduce((closest, element) => {
+                          const rect = element.getBoundingClientRect();
+                          const distance = Math.abs(
+                            rect.left + rect.width / 2 - viewportCenter
+                          );
+                          if (!closest || distance < closest.distance) {
+                            return {
+                              index: parseInt(
+                                element.getAttribute("data-thread-index") || "0"
+                              ),
+                              distance,
+                            };
+                          }
+                          return closest;
+                        }, null as { index: number; distance: number } | null)
+                          ?.index || 0;
+
+                      // If moving from larger to smaller numbers (scrolling left), target first element
+                      // If moving from smaller to larger numbers (scrolling right), target last element
+                      const targetIndex =
+                        currentIndex > group[0]
+                          ? group[0]
+                          : group[group.length - 1];
+
+                      const targetElement = document.querySelector(
+                        `[data-thread-index="${targetIndex}"]`
                       );
-                      if (!closest || distance < closest.distance) {
-                        return {
-                          index: parseInt(
-                            element.getAttribute("data-thread-index") || "0"
-                          ),
-                          distance,
-                        };
+                      if (targetElement) {
+                        targetElement.scrollIntoView({
+                          behavior: "smooth",
+                          block: "nearest", // Don't change vertical scroll
+                          inline:
+                            currentIndex > group[group.length - 1]
+                              ? "start"
+                              : "end",
+                        });
                       }
-                      return closest;
-                    }, null as { index: number; distance: number } | null)
-                      ?.index || 0;
-
-                  // If moving from larger to smaller numbers (scrolling left), target first element
-                  // If moving from smaller to larger numbers (scrolling right), target last element
-                  const targetIndex =
-                    currentIndex > group[0]
-                      ? group[0]
-                      : group[group.length - 1];
-
-                  const targetElement = document.querySelector(
-                    `[data-thread-index="${targetIndex}"]`
-                  );
-                  if (targetElement) {
-                    targetElement.scrollIntoView({
-                      behavior: "smooth",
-                      block: "nearest", // Don't change vertical scroll
-                      inline:
-                        currentIndex > group[group.length - 1]
-                          ? "start"
-                          : "end",
-                    });
-                  }
-                }, 100);
-              }}
-            >
-              {label}
-            </IconButton>
-          </Tooltip>
-        );
-      })}
-    </ButtonGroup>
+                    }, 100);
+                  }}
+                >
+                  {label}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {`Jump to thread${startNum === endNum ? "" : "s"} ${label}`}
+              </TooltipContent>
+            </Tooltip>
+          );
+        })}
+      </TooltipProvider>
+    </div>
   );
 
   let jumpButtonDrawerClosed = (
-    <ButtonGroup size="small" color="primary" sx={{ gap: 0 }}>
-      {Object.keys(leafTableGroups).map((groupId, idx) => (
-        <Tooltip key={`thread-nav-${idx}`} title={`Jump to thread ${idx + 1}`}>
-          <IconButton
-            size="small"
-            color="primary"
-            sx={{ fontSize: "12px", padding: "4px" }}
-            onClick={() => {
-              const threadElement = document.querySelector(
-                `[data-thread-index="${idx}"]`
-              );
-              threadElement?.scrollIntoView({ behavior: "smooth" });
-            }}
-          >
-            {idx + 1}
-          </IconButton>
-        </Tooltip>
-      ))}
-    </ButtonGroup>
+    <div className="flex gap-0">
+      <TooltipProvider>
+        {Object.keys(leafTableGroups).map((groupId, idx) => (
+          <Tooltip key={`thread-nav-${idx}`}>
+            <TooltipTrigger asChild>
+              <button
+                className="p-1 text-xs text-primary hover:bg-accent rounded"
+                onClick={() => {
+                  const threadElement = document.querySelector(
+                    `[data-thread-index="${idx}"]`
+                  );
+                  threadElement?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                {idx + 1}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{`Jump to thread ${idx + 1}`}</TooltipContent>
+          </Tooltip>
+        ))}
+      </TooltipProvider>
+    </div>
   );
 
   let jumpButtons = drawerOpen ? jumpButtonsDrawerOpen : jumpButtonDrawerClosed;
 
   let carousel = (
-    <Box className="data-thread" sx={{ ...sx, position: "relative" }}>
-      <Box
-        sx={{
-          direction: "ltr",
-          display: "flex",
-          paddingLeft: "12px",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography
-            className="view-title"
-            component="h2"
-            sx={{ marginTop: "6px" }}
-          >
+    <div className={cn("data-thread relative", className)}>
+      <div className="ltr flex pl-3 items-center justify-between">
+        <div className="flex items-center gap-1">
+          <h2 className="view-title mt-1.5">
             Data Threads
-          </Typography>
+          </h2>
           {jumpButtons}
-        </Box>
+        </div>
 
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          <Tooltip title={"collapse"}>
-            <span>
-              <IconButton
-                size={"small"}
-                color="primary"
-                disabled={drawerOpen === false}
-                onClick={() => {
-                  setThreadDrawerOpen(false);
-                }}
-              >
-                <ChevronLeftIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title={"expand"}>
-            <span>
-              <IconButton
-                size={"small"}
-                color="primary"
-                disabled={leafTables.length <= 1}
-                onClick={() => {
-                  setThreadDrawerOpen(true);
-                }}
-              >
-                <ChevronRightIcon />
-              </IconButton>
-            </span>
-          </Tooltip>
-        </Box>
-      </Box>
+        <div className="flex items-center">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <button
+                    className={cn(
+                      "p-1 text-primary hover:bg-accent rounded",
+                      drawerOpen === false && "opacity-50 cursor-not-allowed"
+                    )}
+                    disabled={drawerOpen === false}
+                    onClick={() => {
+                      setThreadDrawerOpen(false);
+                    }}
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>collapse</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <button
+                    className={cn(
+                      "p-1 text-primary hover:bg-accent rounded",
+                      leafTables.length <= 1 && "opacity-50 cursor-not-allowed"
+                    )}
+                    disabled={leafTables.length <= 1}
+                    onClick={() => {
+                      setThreadDrawerOpen(true);
+                    }}
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>expand</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </div>
 
-      <Box
-        sx={{
-          overflow: "hidden",
-          direction: "rtl",
-          display: "block",
-          flex: 1,
-          height: "calc(100% - 48px)",
-          transition: "width 0.3s ease-in-out", // Smooth width transition for container
-        }}
-      >
+      <div className="overflow-hidden rtl block flex-1 h-[calc(100%-48px)] transition-[width] duration-300">
         {view}
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 
   return carousel;
